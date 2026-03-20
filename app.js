@@ -321,7 +321,7 @@ function renderHero() {
   const daily = forecast.daily;
   const currentAir = air.current || {};
   const weather = getWeatherMeta(current.weather_code, Boolean(current.is_day));
-  const climate = getClimateTheme(weather.icon);
+  const climate = getClimateTheme(weather);
   const airQuality = getAirQualityMeta(currentAir.us_aqi);
   const visibilityKm = toKilometres(current.visibility);
 
@@ -332,11 +332,11 @@ function renderHero() {
   refs.conditionLabel.textContent = weather.label;
   refs.temperatureValue.textContent = Math.round(current.temperature_2m);
   refs.heroCopy.textContent = `${weather.summary} with around ${Math.round(daily.precipitation_probability_max?.[0] ?? 0)}% rain chance, ${Math.round(current.wind_speed_10m)} km/h winds, and ${visibilityKm.toFixed(1)} km visibility.`;
-  refs.heroVisual.className = `hero-visual hero-visual-${weather.icon}`;
+  refs.heroVisual.className = `hero-visual hero-visual-${weather.icon} hero-visual-motion-${weather.motion}`;
   refs.heroVisual.style.setProperty("--hero-accent", climate.accent);
   refs.heroVisual.style.setProperty("--hero-accent-soft", climate.soft);
   refs.heroVisual.style.setProperty("--hero-glow", climate.glow);
-  refs.heroVisual.innerHTML = buildHeroVisual(weather.icon);
+  refs.heroVisual.innerHTML = buildHeroVisual(weather);
 
   refs.statRow.innerHTML = [
     `Precipitation: ${Math.round(daily.precipitation_probability_max?.[0] ?? 0)}%`,
@@ -371,7 +371,7 @@ function renderTrendSection() {
     return `
       <article class="hour-card ${index === 0 ? "active" : ""}">
         <p>${escapeHtml(entry.label)}</p>
-        <span class="mini-dot ${escapeHtml(weather.icon)}"></span>
+        ${buildWeatherGlyph(weather, "hourly")}
         <strong>${escapeHtml(config.label(config.value(entry)))}</strong>
       </article>
     `;
@@ -396,13 +396,13 @@ function renderForecastSection() {
     const start = ((low - overallMin) / range) * 100;
     const width = ((high - low) / range) * 100;
     const weather = getWeatherMeta(daily.weather_code[index], true);
-    const climate = getClimateTheme(weather.icon);
+    const climate = getClimateTheme(weather);
 
     return `
-      <div class="forecast-row forecast-row-${escapeHtml(weather.icon)}" style="--forecast-accent: ${climate.accent}; --forecast-accent-soft: ${climate.soft}; --forecast-glow: ${climate.glow};">
+      <div class="forecast-row forecast-row-${escapeHtml(weather.icon)} forecast-row-motion-${escapeHtml(weather.motion)}" style="--forecast-accent: ${climate.accent}; --forecast-accent-soft: ${climate.soft}; --forecast-glow: ${climate.glow};">
         <span class="day">${escapeHtml(formatDayLabel(time, index))}</span>
         <div class="forecast-weather">
-          ${buildForecastAnimation(weather.icon)}
+          ${buildWeatherGlyph(weather, "forecast")}
           <span class="condition">${escapeHtml(weather.shortLabel)}</span>
         </div>
         <div class="temperature-band"><span class="band-fill" style="--start: ${start.toFixed(1)}%; --width: ${width.toFixed(1)}%;"></span></div>
@@ -413,80 +413,185 @@ function renderForecastSection() {
   }).join("");
 }
 
-function buildForecastAnimation(icon) {
-  switch (icon) {
+function buildForecastAnimation(weather) {
+  return buildWeatherGlyph(weather, "forecast");
+}
+
+function buildWeatherGlyph(weatherOrIcon, variant = "forecast") {
+  const weather = normalizeWeatherDescriptor(weatherOrIcon);
+  return `
+    <span class="weather-glyph weather-glyph-${variant} weather-glyph-${weather.icon} weather-glyph-motion-${weather.motion}" aria-hidden="true">
+      <svg viewBox="0 0 48 48" class="weather-glyph-canvas" focusable="false">
+        ${buildWeatherGlyphSvg(weather, variant)}
+      </svg>
+    </span>
+  `;
+}
+
+function normalizeWeatherDescriptor(weatherOrIcon) {
+  if (typeof weatherOrIcon === "string") {
+    return {
+      icon: weatherOrIcon,
+      motion: weatherOrIcon === "moon" ? "night" : weatherOrIcon
+    };
+  }
+
+  return {
+    ...weatherOrIcon,
+    motion: weatherOrIcon.motion || (weatherOrIcon.icon === "moon" ? "night" : weatherOrIcon.icon)
+  };
+}
+
+function buildWeatherGlyphSvg(weatherOrIcon, variant = "forecast") {
+  const weather = normalizeWeatherDescriptor(weatherOrIcon);
+  const cloud = `
+    <g class="wx-cloud">
+      <ellipse class="wx-cloud-back" cx="17" cy="27" rx="8" ry="6"></ellipse>
+      <ellipse class="wx-cloud-front" cx="28" cy="23" rx="11" ry="9"></ellipse>
+      <ellipse class="wx-cloud-front" cx="37" cy="29" rx="7" ry="6"></ellipse>
+      <rect class="wx-cloud-base" x="11" y="28" width="29" height="10" rx="5"></rect>
+    </g>
+  `;
+
+  const darkCloud = `
+    <g class="wx-cloud wx-cloud-storm">
+      <ellipse class="wx-cloud-back" cx="17" cy="27" rx="8" ry="6"></ellipse>
+      <ellipse class="wx-cloud-front" cx="28" cy="23" rx="11" ry="9"></ellipse>
+      <ellipse class="wx-cloud-front" cx="37" cy="29" rx="7" ry="6"></ellipse>
+      <rect class="wx-cloud-base" x="11" y="28" width="29" height="10" rx="5"></rect>
+    </g>
+  `;
+
+  const sun = `
+    <g class="wx-sun">
+      <circle class="wx-sun-glow" cx="21" cy="19" r="12"></circle>
+      <circle class="wx-sun-ring" cx="21" cy="19" r="15"></circle>
+      <circle class="wx-sun-core" cx="21" cy="19" r="10"></circle>
+    </g>
+  `;
+
+  const snow = `
+    <g class="wx-snow">
+      <g class="wx-flake wx-flake-1">
+        <line x1="14" y1="36" x2="14" y2="42"></line>
+        <line x1="11" y1="39" x2="17" y2="39"></line>
+      </g>
+      <g class="wx-flake wx-flake-2">
+        <line x1="23" y1="37" x2="23" y2="43"></line>
+        <line x1="20" y1="40" x2="26" y2="40"></line>
+      </g>
+      <g class="wx-flake wx-flake-3">
+        <line x1="32" y1="36" x2="32" y2="42"></line>
+        <line x1="29" y1="39" x2="35" y2="39"></line>
+      </g>
+    </g>
+  `;
+
+  const fog = `
+    <g class="wx-fog">
+      <line class="wx-fog-line wx-fog-line-1" x1="13" y1="36" x2="36" y2="36"></line>
+      <line class="wx-fog-line wx-fog-line-2" x1="16" y1="41" x2="39" y2="41"></line>
+    </g>
+  `;
+
+  switch (weather.icon) {
     case "sunny":
-      return `
-        <span class="forecast-animation forecast-anim-sunny" aria-hidden="true">
-          <span class="forecast-sun-core"></span>
-          <span class="forecast-sun-ring"></span>
-        </span>
-      `;
+      return sun;
     case "partly":
-      return `
-        <span class="forecast-animation forecast-anim-partly" aria-hidden="true">
-          <span class="forecast-sun-core"></span>
-          <span class="forecast-cloud-shape forecast-cloud-small"></span>
-          <span class="forecast-cloud-shape forecast-cloud-main"></span>
-        </span>
-      `;
+      return `${sun}${cloud}`;
     case "cloudy":
-      return `
-        <span class="forecast-animation forecast-anim-cloudy" aria-hidden="true">
-          <span class="forecast-cloud-shape forecast-cloud-small"></span>
-          <span class="forecast-cloud-shape forecast-cloud-main"></span>
-        </span>
-      `;
+      return cloud;
     case "rain":
-      return `
-        <span class="forecast-animation forecast-anim-rain" aria-hidden="true">
-          <span class="forecast-cloud-shape forecast-cloud-small"></span>
-          <span class="forecast-cloud-shape forecast-cloud-main"></span>
-          <span class="forecast-drop drop-one"></span>
-          <span class="forecast-drop drop-two"></span>
-          <span class="forecast-drop drop-three"></span>
-        </span>
-      `;
+      return `${cloud}${buildRainGlyph(weather.motion, variant)}`;
     case "storm":
-      return `
-        <span class="forecast-animation forecast-anim-storm" aria-hidden="true">
-          <span class="forecast-cloud-shape forecast-cloud-small"></span>
-          <span class="forecast-cloud-shape forecast-cloud-main"></span>
-          <span class="forecast-bolt"></span>
-        </span>
-      `;
+      return `${darkCloud}${buildStormGlyph(variant)}`;
     case "snow":
-      return `
-        <span class="forecast-animation forecast-anim-snow" aria-hidden="true">
-          <span class="forecast-cloud-shape forecast-cloud-small"></span>
-          <span class="forecast-cloud-shape forecast-cloud-main"></span>
-          <span class="forecast-flake flake-one"></span>
-          <span class="forecast-flake flake-two"></span>
-          <span class="forecast-flake flake-three"></span>
-        </span>
-      `;
+      return `${cloud}${snow}`;
     case "fog":
-      return `
-        <span class="forecast-animation forecast-anim-fog" aria-hidden="true">
-          <span class="forecast-cloud-shape forecast-cloud-main"></span>
-          <span class="forecast-fog-line fog-one"></span>
-          <span class="forecast-fog-line fog-two"></span>
-        </span>
-      `;
+      return `${cloud}${fog}`;
     case "moon":
       return `
-        <span class="forecast-animation forecast-anim-moon" aria-hidden="true">
-          <span class="forecast-moon-core"></span>
-        </span>
+        <g class="wx-moon">
+          <path class="wx-moon-core" d="M29 9C24 9.7 20.3 14 20.3 19.2C20.3 24.8 24.8 29.3 30.4 29.3C33 29.3 35.3 28.4 37 27C35.5 31.3 31.4 34.4 26.6 34.4C20.5 34.4 15.5 29.5 15.5 23.3C15.5 17.1 20.5 12.1 26.6 12.1C27.5 12.1 28.3 12.2 29 12.4Z"></path>
+          <circle class="wx-star" cx="35" cy="13" r="1.8"></circle>
+          <circle class="wx-star wx-star-small" cx="13.5" cy="18" r="1.3"></circle>
+        </g>
       `;
     default:
-      return `
-        <span class="forecast-animation forecast-anim-cloudy" aria-hidden="true">
-          <span class="forecast-cloud-shape forecast-cloud-small"></span>
-          <span class="forecast-cloud-shape forecast-cloud-main"></span>
-        </span>
-      `;
+      return `${sun}${cloud}`;
   }
+}
+
+function buildStormGlyph(variant = "forecast") {
+  const secondaryBolt = variant === "hero"
+    ? '<path class="wx-bolt wx-bolt-secondary" d="M33.4 29.4L28.5 38.1H33.3L31.1 44.4L40.4 33.6H35.4L37.8 29.4Z"></path>'
+    : "";
+
+  return `
+    <g class="wx-storm-flash">
+      <circle class="wx-storm-glow" cx="23" cy="22" r="${variant === "hero" ? "15.5" : "14"}"></circle>
+    </g>
+    ${buildRainGlyph("storm", variant)}
+    <path class="wx-bolt" d="M24 31L18 42H24L21 48L32 35H26L29 31Z"></path>
+    ${secondaryBolt}
+  `;
+}
+
+function buildRainGlyph(motion = "rain", variant = "forecast") {
+  const profiles = {
+    drizzle: [
+      { x: 16, y: 33.8, scale: 0.72, delay: 0, duration: 1.62, distance: 4.8 },
+      { x: 28.5, y: 34.6, scale: 0.68, delay: 0.26, duration: 1.72, distance: 4.4 }
+    ],
+    rain: [
+      { x: 14, y: 33.2, scale: 0.82, delay: 0, duration: 1.2, distance: 6.1 },
+      { x: 24, y: 34, scale: 0.78, delay: 0.18, duration: 1.14, distance: 6.3 },
+      { x: 33, y: 33.3, scale: 0.84, delay: 0.42, duration: 1.22, distance: 6.1 }
+    ],
+    downpour: [
+      { x: 11.8, y: 32.4, scale: 0.82, delay: 0, duration: 0.92, distance: 7.4 },
+      { x: 18.4, y: 33.4, scale: 0.76, delay: 0.1, duration: 0.84, distance: 7.8 },
+      { x: 24.8, y: 32.8, scale: 0.86, delay: 0.22, duration: 0.88, distance: 7.6 },
+      { x: 31.2, y: 33.7, scale: 0.76, delay: 0.34, duration: 0.82, distance: 7.9 },
+      { x: 37.4, y: 32.6, scale: 0.82, delay: 0.46, duration: 0.9, distance: 7.5 }
+    ],
+    storm: [
+      { x: 13.2, y: 32.3, scale: 0.86, delay: 0, duration: 0.82, distance: 7.8 },
+      { x: 20.6, y: 33.2, scale: 0.82, delay: 0.12, duration: 0.78, distance: 8.1 },
+      { x: 28.2, y: 32.9, scale: 0.9, delay: 0.24, duration: 0.8, distance: 8.2 },
+      { x: 35.5, y: 33.6, scale: 0.82, delay: 0.36, duration: 0.76, distance: 8.1 }
+    ]
+  };
+
+  const drops = profiles[motion] || profiles.rain;
+  const haze = motion === "drizzle"
+    ? `<ellipse class="wx-drizzle-haze" cx="24" cy="35.4" rx="${variant === "hero" ? "16.5" : "15.2"}" ry="3.2"></ellipse>`
+    : "";
+  const sheet = ["downpour", "storm"].includes(motion)
+    ? '<path class="wx-rain-sheet" d="M10.5 31.2C16.4 29.6 31.1 29.3 37.7 31.2C35.9 34.2 32.7 36.7 29.4 38.8H18.7C15.4 36.8 12.4 34.4 10.5 31.2Z"></path>'
+    : "";
+
+  return `
+    <g class="wx-rain wx-rain-${motion}">
+      ${haze}
+      ${sheet}
+      ${drops.map((drop, index) => `
+        <path class="wx-drop wx-drop-${index + 1}" style="--drop-delay: ${drop.delay}s; --drop-duration: ${drop.duration}s; --drop-distance: ${drop.distance}px;" d="${buildRainDropPath(drop.x, drop.y, drop.scale)}"></path>
+      `).join("")}
+    </g>
+  `;
+}
+
+function buildRainDropPath(x, y, scale = 1) {
+  const point = (value) => Number(value).toFixed(1);
+
+  return [
+    `M${point(x)} ${point(y)}`,
+    `C${point(x + 1.7 * scale)} ${point(y + 2.4 * scale)} ${point(x + 3 * scale)} ${point(y + 4.6 * scale)} ${point(x + 3 * scale)} ${point(y + 6.9 * scale)}`,
+    `C${point(x + 3 * scale)} ${point(y + 9.2 * scale)} ${point(x + 1.1 * scale)} ${point(y + 11.1 * scale)} ${point(x)} ${point(y + 11.1 * scale)}`,
+    `C${point(x - 1.9 * scale)} ${point(y + 11.1 * scale)} ${point(x - 3.4 * scale)} ${point(y + 9.2 * scale)} ${point(x - 3.4 * scale)} ${point(y + 6.9 * scale)}`,
+    `C${point(x - 3.4 * scale)} ${point(y + 4.6 * scale)} ${point(x - 1.8 * scale)} ${point(y + 2.4 * scale)} ${point(x)} ${point(y)}Z`
+  ].join("");
 }
 
 function renderDetailsSection() {
@@ -651,9 +756,10 @@ function buildTrendChart(entries, config) {
   `;
 }
 
-function buildHeroVisual(icon) {
+function buildHeroVisual(weatherOrIcon) {
+  const weather = normalizeWeatherDescriptor(weatherOrIcon);
   return `
-    <div class="hero-scene hero-scene-${icon}" aria-hidden="true">
+    <div class="hero-scene hero-scene-${weather.icon} hero-scene-motion-${weather.motion}" aria-hidden="true">
       <span class="hero-side-beam beam-left"></span>
       <span class="hero-side-beam beam-right"></span>
       <span class="hero-orbit orbit-one"></span>
@@ -662,82 +768,23 @@ function buildHeroVisual(icon) {
       <span class="hero-particle particle-two"></span>
       <span class="hero-particle particle-three"></span>
       <div class="hero-climate-core">
-        ${buildHeroClimateCore(icon)}
+        ${buildHeroClimateCore(weather)}
       </div>
       <span class="hero-floor-glow"></span>
     </div>
   `;
 }
 
-function buildHeroClimateCore(icon) {
-  switch (icon) {
-    case "sunny":
-      return `
-        <span class="hero-sun-halo"></span>
-        <span class="hero-sun-ring"></span>
-        <span class="hero-sun-core"></span>
-      `;
-    case "partly":
-      return `
-        <span class="hero-sun-halo"></span>
-        <span class="hero-sun-core"></span>
-        <span class="hero-cloud hero-cloud-back"></span>
-        <span class="hero-cloud hero-cloud-main"></span>
-      `;
-    case "cloudy":
-      return `
-        <span class="hero-cloud hero-cloud-back hero-cloud-wide"></span>
-        <span class="hero-cloud hero-cloud-main hero-cloud-front"></span>
-      `;
-    case "fog":
-      return `
-        <span class="hero-cloud hero-cloud-back hero-cloud-wide"></span>
-        <span class="hero-cloud hero-cloud-main hero-cloud-front"></span>
-        <span class="hero-fog-line fog-one"></span>
-        <span class="hero-fog-line fog-two"></span>
-        <span class="hero-fog-line fog-three"></span>
-      `;
-    case "rain":
-      return `
-        <span class="hero-cloud hero-cloud-back"></span>
-        <span class="hero-cloud hero-cloud-main hero-cloud-front"></span>
-        <span class="hero-rain-drop rain-one"></span>
-        <span class="hero-rain-drop rain-two"></span>
-        <span class="hero-rain-drop rain-three"></span>
-      `;
-    case "storm":
-      return `
-        <span class="hero-cloud hero-cloud-back hero-cloud-wide"></span>
-        <span class="hero-cloud hero-cloud-main hero-cloud-front"></span>
-        <span class="hero-bolt"></span>
-        <span class="hero-rain-drop rain-one"></span>
-        <span class="hero-rain-drop rain-two"></span>
-      `;
-    case "snow":
-      return `
-        <span class="hero-cloud hero-cloud-back"></span>
-        <span class="hero-cloud hero-cloud-main hero-cloud-front"></span>
-        <span class="hero-snow-dot snow-one"></span>
-        <span class="hero-snow-dot snow-two"></span>
-        <span class="hero-snow-dot snow-three"></span>
-      `;
-    case "moon":
-      return `
-        <span class="hero-star star-one"></span>
-        <span class="hero-star star-two"></span>
-        <span class="hero-moon-core"></span>
-        <span class="hero-cloud hero-cloud-main hero-cloud-front night-cloud"></span>
-      `;
-    default:
-      return `
-        <span class="hero-sun-halo"></span>
-        <span class="hero-sun-core"></span>
-        <span class="hero-cloud hero-cloud-main hero-cloud-front"></span>
-      `;
-  }
+function buildHeroClimateCore(weather) {
+  return `
+    <div class="hero-glyph-shell">
+      ${buildWeatherGlyph(weather, "hero")}
+    </div>
+  `;
 }
 
-function getClimateTheme(icon) {
+function getClimateTheme(weatherOrIcon) {
+  const weather = normalizeWeatherDescriptor(weatherOrIcon);
   const themes = {
     sunny: {
       accent: "#f7c64f",
@@ -781,43 +828,79 @@ function getClimateTheme(icon) {
     }
   };
 
-  return themes[icon] || themes.partly;
+  if (weather.icon === "rain") {
+    const rainThemes = {
+      drizzle: {
+        accent: "#77adff",
+        soft: "rgba(119, 173, 255, 0.16)",
+        glow: "rgba(119, 173, 255, 0.3)"
+      },
+      rain: themes.rain,
+      downpour: {
+        accent: "#2f74e8",
+        soft: "rgba(47, 116, 232, 0.24)",
+        glow: "rgba(47, 116, 232, 0.42)"
+      }
+    };
+
+    return rainThemes[weather.motion] || rainThemes.rain;
+  }
+
+  return themes[weather.icon] || themes.partly;
 }
 
 function getWeatherMeta(code, isDay) {
   if (code === 0) {
     return isDay
-      ? { label: "Clear sky", shortLabel: "Clear", icon: "sunny", summary: "Bright and clear" }
-      : { label: "Clear night", shortLabel: "Clear", icon: "moon", summary: "Calm and clear" };
+      ? { label: "Clear sky", shortLabel: "Clear", icon: "sunny", motion: "sunny", summary: "Bright and clear" }
+      : { label: "Clear night", shortLabel: "Clear", icon: "moon", motion: "night", summary: "Calm and clear" };
   }
 
   if ([1, 2].includes(code)) {
     return isDay
-      ? { label: "Partly cloudy", shortLabel: "Partly cloudy", icon: "partly", summary: "A mix of sun and clouds" }
-      : { label: "Mostly clear", shortLabel: "Mostly clear", icon: "moon", summary: "Mostly clear skies" };
+      ? { label: "Partly cloudy", shortLabel: "Partly cloudy", icon: "partly", motion: "partly", summary: "A mix of sun and clouds" }
+      : { label: "Mostly clear", shortLabel: "Mostly clear", icon: "moon", motion: "night", summary: "Mostly clear skies" };
   }
 
   if (code === 3) {
-    return { label: "Overcast", shortLabel: "Cloudy", icon: "cloudy", summary: "Cloud cover is dominating" };
+    return { label: "Overcast", shortLabel: "Cloudy", icon: "cloudy", motion: "cloudy", summary: "Cloud cover is dominating" };
   }
 
   if ([45, 48].includes(code)) {
-    return { label: "Fog", shortLabel: "Fog", icon: "fog", summary: "Foggy conditions are reducing clarity" };
+    return { label: "Fog", shortLabel: "Fog", icon: "fog", motion: "fog", summary: "Foggy conditions are reducing clarity" };
   }
 
-  if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(code)) {
-    return { label: "Rain", shortLabel: "Rain", icon: "rain", summary: "Wet weather is moving through" };
+  if ([51, 53].includes(code)) {
+    return { label: "Drizzle", shortLabel: "Drizzle", icon: "rain", motion: "drizzle", summary: "A soft drizzle is passing through" };
+  }
+
+  if ([55, 56, 57, 61].includes(code)) {
+    return { label: "Light rain", shortLabel: "Rain", icon: "rain", motion: "rain", summary: "Light rain is moving through" };
+  }
+
+  if ([63, 66, 80].includes(code)) {
+    return { label: "Rain", shortLabel: "Rain", icon: "rain", motion: "rain", summary: "Steady rain is moving through" };
+  }
+
+  if ([65, 67, 81, 82].includes(code)) {
+    return { label: "Heavy rain", shortLabel: "Heavy rain", icon: "rain", motion: "downpour", summary: "A heavier burst of rain is moving through" };
   }
 
   if ([71, 73, 75, 77, 85, 86].includes(code)) {
-    return { label: "Snow", shortLabel: "Snow", icon: "snow", summary: "Cold wintry weather is in place" };
+    return { label: "Snow", shortLabel: "Snow", icon: "snow", motion: "snow", summary: "Cold wintry weather is in place" };
   }
 
   if ([95, 96, 99].includes(code)) {
-    return { label: "Thunderstorm", shortLabel: "Storm", icon: "storm", summary: "Storm activity is in the area" };
+    return { label: "Thunderstorm", shortLabel: "Storm", icon: "storm", motion: "storm", summary: "Storm activity is in the area" };
   }
 
-  return { label: "Partly cloudy", shortLabel: "Partly cloudy", icon: isDay ? "partly" : "moon", summary: "Conditions are changing through the day" };
+  return {
+    label: "Partly cloudy",
+    shortLabel: "Partly cloudy",
+    icon: isDay ? "partly" : "moon",
+    motion: isDay ? "partly" : "night",
+    summary: "Conditions are changing through the day"
+  };
 }
 
 function getAirQualityMeta(aqi) {
