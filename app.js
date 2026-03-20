@@ -321,6 +321,7 @@ function renderHero() {
   const daily = forecast.daily;
   const currentAir = air.current || {};
   const weather = getWeatherMeta(current.weather_code, Boolean(current.is_day));
+  const climate = getClimateTheme(weather.icon);
   const airQuality = getAirQualityMeta(currentAir.us_aqi);
   const visibilityKm = toKilometres(current.visibility);
 
@@ -331,6 +332,10 @@ function renderHero() {
   refs.conditionLabel.textContent = weather.label;
   refs.temperatureValue.textContent = Math.round(current.temperature_2m);
   refs.heroCopy.textContent = `${weather.summary} with around ${Math.round(daily.precipitation_probability_max?.[0] ?? 0)}% rain chance, ${Math.round(current.wind_speed_10m)} km/h winds, and ${visibilityKm.toFixed(1)} km visibility.`;
+  refs.heroVisual.className = `hero-visual hero-visual-${weather.icon}`;
+  refs.heroVisual.style.setProperty("--hero-accent", climate.accent);
+  refs.heroVisual.style.setProperty("--hero-accent-soft", climate.soft);
+  refs.heroVisual.style.setProperty("--hero-glow", climate.glow);
   refs.heroVisual.innerHTML = buildHeroVisual(weather.icon);
 
   refs.statRow.innerHTML = [
@@ -391,12 +396,13 @@ function renderForecastSection() {
     const start = ((low - overallMin) / range) * 100;
     const width = ((high - low) / range) * 100;
     const weather = getWeatherMeta(daily.weather_code[index], true);
+    const climate = getClimateTheme(weather.icon);
 
     return `
-      <div class="forecast-row">
+      <div class="forecast-row forecast-row-${escapeHtml(weather.icon)}" style="--forecast-accent: ${climate.accent}; --forecast-accent-soft: ${climate.soft}; --forecast-glow: ${climate.glow};">
         <span class="day">${escapeHtml(formatDayLabel(time, index))}</span>
         <div class="forecast-weather">
-          <span class="mini-dot forecast-dot ${escapeHtml(weather.icon)}"></span>
+          ${buildForecastAnimation(weather.icon)}
           <span class="condition">${escapeHtml(weather.shortLabel)}</span>
         </div>
         <div class="temperature-band"><span class="band-fill" style="--start: ${start.toFixed(1)}%; --width: ${width.toFixed(1)}%;"></span></div>
@@ -405,6 +411,82 @@ function renderForecastSection() {
       </div>
     `;
   }).join("");
+}
+
+function buildForecastAnimation(icon) {
+  switch (icon) {
+    case "sunny":
+      return `
+        <span class="forecast-animation forecast-anim-sunny" aria-hidden="true">
+          <span class="forecast-sun-core"></span>
+          <span class="forecast-sun-ring"></span>
+        </span>
+      `;
+    case "partly":
+      return `
+        <span class="forecast-animation forecast-anim-partly" aria-hidden="true">
+          <span class="forecast-sun-core"></span>
+          <span class="forecast-cloud-shape forecast-cloud-small"></span>
+          <span class="forecast-cloud-shape forecast-cloud-main"></span>
+        </span>
+      `;
+    case "cloudy":
+      return `
+        <span class="forecast-animation forecast-anim-cloudy" aria-hidden="true">
+          <span class="forecast-cloud-shape forecast-cloud-small"></span>
+          <span class="forecast-cloud-shape forecast-cloud-main"></span>
+        </span>
+      `;
+    case "rain":
+      return `
+        <span class="forecast-animation forecast-anim-rain" aria-hidden="true">
+          <span class="forecast-cloud-shape forecast-cloud-small"></span>
+          <span class="forecast-cloud-shape forecast-cloud-main"></span>
+          <span class="forecast-drop drop-one"></span>
+          <span class="forecast-drop drop-two"></span>
+          <span class="forecast-drop drop-three"></span>
+        </span>
+      `;
+    case "storm":
+      return `
+        <span class="forecast-animation forecast-anim-storm" aria-hidden="true">
+          <span class="forecast-cloud-shape forecast-cloud-small"></span>
+          <span class="forecast-cloud-shape forecast-cloud-main"></span>
+          <span class="forecast-bolt"></span>
+        </span>
+      `;
+    case "snow":
+      return `
+        <span class="forecast-animation forecast-anim-snow" aria-hidden="true">
+          <span class="forecast-cloud-shape forecast-cloud-small"></span>
+          <span class="forecast-cloud-shape forecast-cloud-main"></span>
+          <span class="forecast-flake flake-one"></span>
+          <span class="forecast-flake flake-two"></span>
+          <span class="forecast-flake flake-three"></span>
+        </span>
+      `;
+    case "fog":
+      return `
+        <span class="forecast-animation forecast-anim-fog" aria-hidden="true">
+          <span class="forecast-cloud-shape forecast-cloud-main"></span>
+          <span class="forecast-fog-line fog-one"></span>
+          <span class="forecast-fog-line fog-two"></span>
+        </span>
+      `;
+    case "moon":
+      return `
+        <span class="forecast-animation forecast-anim-moon" aria-hidden="true">
+          <span class="forecast-moon-core"></span>
+        </span>
+      `;
+    default:
+      return `
+        <span class="forecast-animation forecast-anim-cloudy" aria-hidden="true">
+          <span class="forecast-cloud-shape forecast-cloud-small"></span>
+          <span class="forecast-cloud-shape forecast-cloud-main"></span>
+        </span>
+      `;
+  }
 }
 
 function renderDetailsSection() {
@@ -570,113 +652,136 @@ function buildTrendChart(entries, config) {
 }
 
 function buildHeroVisual(icon) {
-  const visuals = {
-    sunny: `
-      <div class="hero-aura sunny-aura"></div>
-      <svg class="hero-icon" viewBox="0 0 220 160">
-        <circle cx="110" cy="80" r="46" fill="#ffd45f"></circle>
-        <circle cx="110" cy="80" r="62" fill="none" stroke="rgba(255, 212, 95, 0.35)" stroke-width="6"></circle>
-      </svg>
-    `,
-    partly: `
-      <div class="hero-aura sunny-aura"></div>
-      <svg class="hero-icon" viewBox="0 0 220 160">
-        <circle cx="82" cy="66" r="34" fill="#ffd45f"></circle>
-        <g fill="#f8fcff">
-          <circle cx="122" cy="93" r="24"></circle>
-          <circle cx="152" cy="86" r="31"></circle>
-          <circle cx="92" cy="100" r="22"></circle>
-          <rect x="72" y="93" width="112" height="34" rx="17"></rect>
-        </g>
-      </svg>
-    `,
-    cloudy: `
-      <div class="hero-aura cloud-aura"></div>
-      <svg class="hero-icon" viewBox="0 0 220 160">
-        <g fill="#f8fcff">
-          <circle cx="96" cy="94" r="26"></circle>
-          <circle cx="138" cy="86" r="34"></circle>
-          <circle cx="168" cy="99" r="24"></circle>
-          <circle cx="64" cy="104" r="20"></circle>
-          <rect x="50" y="94" width="138" height="40" rx="20"></rect>
-        </g>
-      </svg>
-    `,
-    fog: `
-      <div class="hero-aura cloud-aura"></div>
-      <svg class="hero-icon" viewBox="0 0 220 160">
-        <g fill="#f8fcff">
-          <circle cx="96" cy="90" r="24"></circle>
-          <circle cx="138" cy="82" r="32"></circle>
-          <circle cx="64" cy="100" r="20"></circle>
-          <rect x="50" y="90" width="126" height="36" rx="18"></rect>
-        </g>
-        <g stroke="#a5bed9" stroke-width="8" stroke-linecap="round">
-          <line x1="58" y1="132" x2="168" y2="132"></line>
-          <line x1="70" y1="148" x2="180" y2="148"></line>
-        </g>
-      </svg>
-    `,
-    rain: `
-      <div class="hero-aura rain-aura"></div>
-      <svg class="hero-icon" viewBox="0 0 220 160">
-        <g fill="#f8fcff">
-          <circle cx="96" cy="90" r="24"></circle>
-          <circle cx="138" cy="82" r="32"></circle>
-          <circle cx="64" cy="100" r="20"></circle>
-          <rect x="50" y="90" width="126" height="36" rx="18"></rect>
-        </g>
-        <g stroke="#4285f4" stroke-width="8" stroke-linecap="round">
-          <line x1="84" y1="128" x2="74" y2="148"></line>
-          <line x1="116" y1="128" x2="106" y2="148"></line>
-          <line x1="148" y1="128" x2="138" y2="148"></line>
-        </g>
-      </svg>
-    `,
-    storm: `
-      <div class="hero-aura storm-aura"></div>
-      <svg class="hero-icon" viewBox="0 0 220 160">
-        <g fill="#eef6ff">
-          <circle cx="96" cy="90" r="24"></circle>
-          <circle cx="138" cy="82" r="32"></circle>
-          <circle cx="64" cy="100" r="20"></circle>
-          <rect x="50" y="90" width="126" height="36" rx="18"></rect>
-        </g>
-        <path d="M118 124L96 156H114L104 186L144 140H124L138 124Z" fill="#f7c64f" transform="scale(0.7) translate(24 -10)"></path>
-      </svg>
-    `,
-    snow: `
-      <div class="hero-aura cloud-aura"></div>
-      <svg class="hero-icon" viewBox="0 0 220 160">
-        <g fill="#f8fcff">
-          <circle cx="96" cy="90" r="24"></circle>
-          <circle cx="138" cy="82" r="32"></circle>
-          <circle cx="64" cy="100" r="20"></circle>
-          <rect x="50" y="90" width="126" height="36" rx="18"></rect>
-        </g>
-        <g fill="#8cb3e6">
-          <circle cx="88" cy="138" r="5"></circle>
-          <circle cx="120" cy="144" r="5"></circle>
-          <circle cx="150" cy="138" r="5"></circle>
-        </g>
-      </svg>
-    `,
-    moon: `
-      <div class="hero-aura night-aura"></div>
-      <svg class="hero-icon" viewBox="0 0 220 160">
-        <circle cx="92" cy="68" r="38" fill="#d7e4ff"></circle>
-        <circle cx="110" cy="58" r="38" fill="#eef5ff"></circle>
-        <g fill="#f8fcff">
-          <circle cx="138" cy="98" r="22"></circle>
-          <circle cx="164" cy="92" r="26"></circle>
-          <circle cx="106" cy="104" r="18"></circle>
-          <rect x="96" y="98" width="94" height="28" rx="14"></rect>
-        </g>
-      </svg>
-    `
+  return `
+    <div class="hero-scene hero-scene-${icon}" aria-hidden="true">
+      <span class="hero-side-beam beam-left"></span>
+      <span class="hero-side-beam beam-right"></span>
+      <span class="hero-orbit orbit-one"></span>
+      <span class="hero-orbit orbit-two"></span>
+      <span class="hero-particle particle-one"></span>
+      <span class="hero-particle particle-two"></span>
+      <span class="hero-particle particle-three"></span>
+      <div class="hero-climate-core">
+        ${buildHeroClimateCore(icon)}
+      </div>
+      <span class="hero-floor-glow"></span>
+    </div>
+  `;
+}
+
+function buildHeroClimateCore(icon) {
+  switch (icon) {
+    case "sunny":
+      return `
+        <span class="hero-sun-halo"></span>
+        <span class="hero-sun-ring"></span>
+        <span class="hero-sun-core"></span>
+      `;
+    case "partly":
+      return `
+        <span class="hero-sun-halo"></span>
+        <span class="hero-sun-core"></span>
+        <span class="hero-cloud hero-cloud-back"></span>
+        <span class="hero-cloud hero-cloud-main"></span>
+      `;
+    case "cloudy":
+      return `
+        <span class="hero-cloud hero-cloud-back hero-cloud-wide"></span>
+        <span class="hero-cloud hero-cloud-main hero-cloud-front"></span>
+      `;
+    case "fog":
+      return `
+        <span class="hero-cloud hero-cloud-back hero-cloud-wide"></span>
+        <span class="hero-cloud hero-cloud-main hero-cloud-front"></span>
+        <span class="hero-fog-line fog-one"></span>
+        <span class="hero-fog-line fog-two"></span>
+        <span class="hero-fog-line fog-three"></span>
+      `;
+    case "rain":
+      return `
+        <span class="hero-cloud hero-cloud-back"></span>
+        <span class="hero-cloud hero-cloud-main hero-cloud-front"></span>
+        <span class="hero-rain-drop rain-one"></span>
+        <span class="hero-rain-drop rain-two"></span>
+        <span class="hero-rain-drop rain-three"></span>
+      `;
+    case "storm":
+      return `
+        <span class="hero-cloud hero-cloud-back hero-cloud-wide"></span>
+        <span class="hero-cloud hero-cloud-main hero-cloud-front"></span>
+        <span class="hero-bolt"></span>
+        <span class="hero-rain-drop rain-one"></span>
+        <span class="hero-rain-drop rain-two"></span>
+      `;
+    case "snow":
+      return `
+        <span class="hero-cloud hero-cloud-back"></span>
+        <span class="hero-cloud hero-cloud-main hero-cloud-front"></span>
+        <span class="hero-snow-dot snow-one"></span>
+        <span class="hero-snow-dot snow-two"></span>
+        <span class="hero-snow-dot snow-three"></span>
+      `;
+    case "moon":
+      return `
+        <span class="hero-star star-one"></span>
+        <span class="hero-star star-two"></span>
+        <span class="hero-moon-core"></span>
+        <span class="hero-cloud hero-cloud-main hero-cloud-front night-cloud"></span>
+      `;
+    default:
+      return `
+        <span class="hero-sun-halo"></span>
+        <span class="hero-sun-core"></span>
+        <span class="hero-cloud hero-cloud-main hero-cloud-front"></span>
+      `;
+  }
+}
+
+function getClimateTheme(icon) {
+  const themes = {
+    sunny: {
+      accent: "#f7c64f",
+      soft: "rgba(247, 198, 79, 0.22)",
+      glow: "rgba(247, 198, 79, 0.46)"
+    },
+    partly: {
+      accent: "#f0b24b",
+      soft: "rgba(240, 178, 75, 0.2)",
+      glow: "rgba(240, 178, 75, 0.42)"
+    },
+    cloudy: {
+      accent: "#9eb8d8",
+      soft: "rgba(158, 184, 216, 0.2)",
+      glow: "rgba(158, 184, 216, 0.38)"
+    },
+    fog: {
+      accent: "#93afcc",
+      soft: "rgba(147, 175, 204, 0.18)",
+      glow: "rgba(147, 175, 204, 0.34)"
+    },
+    rain: {
+      accent: "#4285f4",
+      soft: "rgba(66, 133, 244, 0.22)",
+      glow: "rgba(66, 133, 244, 0.42)"
+    },
+    storm: {
+      accent: "#6677ff",
+      soft: "rgba(102, 119, 255, 0.2)",
+      glow: "rgba(247, 198, 79, 0.38)"
+    },
+    snow: {
+      accent: "#88b7ff",
+      soft: "rgba(136, 183, 255, 0.2)",
+      glow: "rgba(136, 183, 255, 0.38)"
+    },
+    moon: {
+      accent: "#c8d9ff",
+      soft: "rgba(200, 217, 255, 0.18)",
+      glow: "rgba(200, 217, 255, 0.32)"
+    }
   };
 
-  return visuals[icon] || visuals.partly;
+  return themes[icon] || themes.partly;
 }
 
 function getWeatherMeta(code, isDay) {

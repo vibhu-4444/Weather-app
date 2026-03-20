@@ -321,42 +321,413 @@ h1 {
 .hero-visual {
   position: relative;
   flex: 0 0 290px;
-  min-height: 210px;
+  min-height: 232px;
   display: grid;
   place-items: center;
+  padding: 18px;
+  border-radius: 34px;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 22% 18%, rgba(255, 255, 255, 0.82), transparent 26%),
+    linear-gradient(180deg, rgba(240, 247, 255, 0.96), rgba(222, 236, 252, 0.88));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 18px 34px rgba(96, 133, 172, 0.14);
 }
 
-.hero-aura {
+.hero-visual::before,
+.hero-visual::after {
+  content: "";
   position: absolute;
-  width: 220px;
-  height: 220px;
+  top: 16px;
+  bottom: 16px;
+  width: 28px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, transparent, var(--hero-glow), transparent);
+  opacity: 0.45;
+  filter: blur(10px);
+  animation: heroBeamPulse 5s ease-in-out infinite;
+}
+
+.hero-visual::before {
+  left: -8px;
+}
+
+.hero-visual::after {
+  right: -8px;
+  animation-delay: 1.4s;
+}
+
+.hero-visual-sunny,
+.hero-visual-partly {
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255, 247, 206, 0.84), transparent 28%),
+    linear-gradient(180deg, rgba(246, 250, 255, 0.96), rgba(230, 240, 252, 0.88));
+}
+
+.hero-visual-cloudy,
+.hero-visual-fog,
+.hero-visual-snow {
+  background:
+    radial-gradient(circle at 50% 24%, rgba(255, 255, 255, 0.7), transparent 30%),
+    linear-gradient(180deg, rgba(240, 246, 255, 0.95), rgba(221, 233, 247, 0.9));
+}
+
+.hero-visual-rain {
+  background:
+    radial-gradient(circle at 20% 18%, rgba(212, 232, 255, 0.58), transparent 28%),
+    linear-gradient(180deg, rgba(232, 242, 255, 0.95), rgba(205, 225, 248, 0.9));
+}
+
+.hero-visual-storm {
+  background:
+    radial-gradient(circle at 22% 18%, rgba(247, 198, 79, 0.22), transparent 24%),
+    linear-gradient(180deg, rgba(224, 233, 247, 0.96), rgba(196, 213, 236, 0.92));
+}
+
+.hero-visual-moon {
+  background:
+    radial-gradient(circle at 26% 18%, rgba(212, 224, 255, 0.34), transparent 24%),
+    linear-gradient(180deg, rgba(227, 236, 251, 0.96), rgba(204, 217, 240, 0.92));
+}
+
+.hero-scene {
+  position: relative;
+  width: 100%;
+  max-width: 248px;
+  height: 176px;
+  animation: heroSceneFloat 5.5s ease-in-out infinite;
+}
+
+.hero-side-beam,
+.hero-orbit,
+.hero-particle,
+.hero-floor-glow,
+.hero-sun-core,
+.hero-sun-ring,
+.hero-sun-halo,
+.hero-cloud,
+.hero-rain-drop,
+.hero-bolt,
+.hero-fog-line,
+.hero-snow-dot,
+.hero-moon-core,
+.hero-star {
+  position: absolute;
+}
+
+.hero-side-beam {
+  top: 18px;
+  bottom: 28px;
+  width: 12px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, transparent, var(--hero-glow), transparent);
+  opacity: 0.8;
+  filter: blur(2px);
+}
+
+.beam-left {
+  left: 10px;
+  animation: heroSideSlide 4.8s ease-in-out infinite;
+}
+
+.beam-right {
+  right: 10px;
+  animation: heroSideSlide 4.8s ease-in-out infinite 1.2s reverse;
+}
+
+.hero-orbit {
   border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.44);
+  opacity: 0.6;
 }
 
-.sunny-aura {
-  background: radial-gradient(circle, rgba(255, 214, 106, 0.32), transparent 68%);
+.orbit-one {
+  inset: 18px 40px 26px;
+  animation: heroOrbitSpin 16s linear infinite;
 }
 
-.cloud-aura {
-  background: radial-gradient(circle, rgba(217, 235, 255, 0.42), transparent 70%);
+.orbit-two {
+  inset: 34px 62px 40px;
+  border-color: rgba(255, 255, 255, 0.24);
+  animation: heroOrbitSpinReverse 11s linear infinite;
 }
 
-.rain-aura {
-  background: radial-gradient(circle, rgba(66, 133, 244, 0.18), transparent 70%);
+.hero-particle {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.55);
 }
 
-.storm-aura {
-  background: radial-gradient(circle, rgba(247, 198, 79, 0.18), transparent 70%);
+.particle-one {
+  top: 30px;
+  left: 48px;
+  animation: heroParticleDrift 5.4s ease-in-out infinite;
 }
 
-.night-aura {
-  background: radial-gradient(circle, rgba(191, 209, 255, 0.26), transparent 72%);
+.particle-two {
+  top: 52px;
+  right: 42px;
+  width: 5px;
+  height: 5px;
+  animation: heroParticleDrift 6.2s ease-in-out infinite 0.9s;
 }
 
-.hero-icon {
-  width: 230px;
-  max-width: 100%;
-  filter: drop-shadow(0 16px 26px rgba(93, 122, 153, 0.18));
+.particle-three {
+  bottom: 38px;
+  left: 62px;
+  width: 4px;
+  height: 4px;
+  animation: heroParticleDrift 5.8s ease-in-out infinite 0.5s;
+}
+
+.hero-climate-core {
+  position: absolute;
+  inset: 18px 28px 24px;
+}
+
+.hero-floor-glow {
+  left: 50%;
+  bottom: 12px;
+  width: 134px;
+  height: 24px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(101, 142, 185, 0.28), transparent 72%);
+  transform: translateX(-50%);
+  filter: blur(8px);
+  animation: heroFloorPulse 5s ease-in-out infinite;
+}
+
+.hero-sun-core {
+  top: 14px;
+  left: 44px;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 34%, #fff5c4, #ffd45f 58%, #f0a326 100%);
+  box-shadow: 0 0 28px rgba(247, 198, 79, 0.45);
+  animation: heroSunPulse 4.2s ease-in-out infinite;
+}
+
+.hero-sun-halo {
+  top: -6px;
+  left: 24px;
+  width: 108px;
+  height: 108px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(247, 198, 79, 0.24), transparent 70%);
+  animation: heroHaloPulse 4.8s ease-in-out infinite;
+}
+
+.hero-sun-ring {
+  top: 2px;
+  left: 32px;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  border: 2px solid rgba(247, 198, 79, 0.28);
+  animation: heroOrbitSpin 10s linear infinite;
+}
+
+.hero-cloud {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(225, 238, 252, 0.96));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92), 0 12px 24px rgba(103, 138, 175, 0.12);
+}
+
+.hero-cloud::before,
+.hero-cloud::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  background: inherit;
+}
+
+.hero-cloud-back {
+  left: 36px;
+  bottom: 58px;
+  width: 74px;
+  height: 28px;
+  border-radius: 999px;
+  opacity: 0.84;
+  animation: heroCloudFloat 5.4s ease-in-out infinite;
+}
+
+.hero-cloud-back::before {
+  left: 8px;
+  bottom: 10px;
+  width: 26px;
+  height: 26px;
+}
+
+.hero-cloud-back::after {
+  right: 8px;
+  bottom: 11px;
+  width: 32px;
+  height: 32px;
+}
+
+.hero-cloud-main {
+  left: 82px;
+  bottom: 34px;
+  width: 112px;
+  height: 40px;
+  border-radius: 999px;
+  animation: heroCloudFloat 4.8s ease-in-out infinite 0.4s;
+}
+
+.hero-cloud-main::before {
+  left: 10px;
+  bottom: 14px;
+  width: 38px;
+  height: 38px;
+}
+
+.hero-cloud-main::after {
+  right: 12px;
+  bottom: 16px;
+  width: 48px;
+  height: 48px;
+}
+
+.hero-cloud-front {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92), 0 18px 28px rgba(84, 118, 154, 0.14);
+}
+
+.hero-cloud-wide {
+  width: 86px;
+}
+
+.night-cloud {
+  background: linear-gradient(180deg, rgba(250, 253, 255, 0.95), rgba(213, 227, 247, 0.95));
+}
+
+.hero-rain-drop {
+  bottom: 4px;
+  width: 6px;
+  height: 16px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #85b6ff, #4285f4);
+  box-shadow: 0 0 10px rgba(66, 133, 244, 0.2);
+}
+
+.rain-one {
+  left: 108px;
+  animation: heroRainFall 1.3s ease-in-out infinite;
+}
+
+.rain-two {
+  left: 132px;
+  animation: heroRainFall 1.3s ease-in-out infinite 0.28s;
+}
+
+.rain-three {
+  left: 156px;
+  animation: heroRainFall 1.3s ease-in-out infinite 0.56s;
+}
+
+.hero-bolt {
+  left: 126px;
+  bottom: 8px;
+  width: 22px;
+  height: 34px;
+  background: linear-gradient(180deg, #ffe07a, #f7c64f 70%, #efad1f);
+  clip-path: polygon(40% 0, 100% 0, 58% 44%, 84% 44%, 20% 100%, 40% 58%, 12% 58%);
+  filter: drop-shadow(0 0 10px rgba(247, 198, 79, 0.38));
+  animation: heroBoltFlash 2.4s ease-in-out infinite;
+}
+
+.hero-fog-line {
+  left: 48px;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(145, 172, 201, 0.3), rgba(145, 172, 201, 0.9), rgba(145, 172, 201, 0.3));
+}
+
+.fog-one {
+  bottom: 18px;
+  width: 110px;
+  animation: heroFogSweep 3.4s ease-in-out infinite;
+}
+
+.fog-two {
+  bottom: 4px;
+  left: 60px;
+  width: 132px;
+  animation: heroFogSweep 3.8s ease-in-out infinite 0.3s;
+}
+
+.fog-three {
+  bottom: -10px;
+  left: 76px;
+  width: 92px;
+  animation: heroFogSweep 3.2s ease-in-out infinite 0.7s;
+}
+
+.hero-snow-dot {
+  bottom: 10px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ffffff, #8db7ff);
+  box-shadow: 0 0 10px rgba(141, 183, 255, 0.28);
+}
+
+.snow-one {
+  left: 108px;
+  animation: heroSnowFall 2s ease-in-out infinite;
+}
+
+.snow-two {
+  left: 134px;
+  animation: heroSnowFall 2s ease-in-out infinite 0.35s;
+}
+
+.snow-three {
+  left: 160px;
+  animation: heroSnowFall 2s ease-in-out infinite 0.72s;
+}
+
+.hero-moon-core {
+  top: 18px;
+  left: 60px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #dbe8ff, #b7c9ee);
+  animation: heroMoonFloat 4.6s ease-in-out infinite;
+}
+
+.hero-moon-core::after {
+  content: "";
+  position: absolute;
+  inset: 3px 3px 3px 22px;
+  border-radius: 50%;
+  background: #eef5ff;
+}
+
+.hero-star {
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+}
+
+.star-one {
+  top: 24px;
+  right: 56px;
+  width: 8px;
+  height: 8px;
+  animation: heroStarPulse 2.8s ease-in-out infinite;
+}
+
+.star-two {
+  top: 60px;
+  right: 32px;
+  width: 5px;
+  height: 5px;
+  animation: heroStarPulse 3.2s ease-in-out infinite 0.7s;
 }
 
 .hero-reading {
@@ -470,6 +841,35 @@ h1 {
   grid-row: 1 / span 2;
   display: flex;
   flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.82), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(241, 248, 255, 0.94));
+}
+
+.forecast-card::before,
+.forecast-card::after {
+  content: "";
+  position: absolute;
+  top: 18px;
+  bottom: 18px;
+  width: 10px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, transparent, rgba(66, 133, 244, 0.28), transparent);
+  filter: blur(2px);
+  opacity: 0.8;
+  pointer-events: none;
+  animation: forecastEdgePulse 5.2s ease-in-out infinite;
+}
+
+.forecast-card::before {
+  left: 10px;
+}
+
+.forecast-card::after {
+  right: 10px;
+  animation-delay: 1.7s;
 }
 
 .card-head {
@@ -708,17 +1108,49 @@ h1 {
   display: grid;
   gap: 10px;
   margin-top: 20px;
+  position: relative;
 }
 
 .forecast-row {
+  position: relative;
   gap: 12px;
-  padding: 12px 0;
-  border-bottom: 1px solid rgba(137, 180, 219, 0.18);
+  margin: 0 4px;
+  padding: 14px 12px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(245, 250, 255, 0.82));
+  border: 1px solid rgba(137, 180, 219, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 10px 20px rgba(98, 135, 176, 0.08);
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
 }
 
-.forecast-row:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
+.forecast-row::before,
+.forecast-row::after {
+  content: "";
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  width: 6px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, transparent, var(--forecast-glow), transparent);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.forecast-row::before {
+  left: 0;
+  animation: forecastRowEdge 3.8s ease-in-out infinite;
+}
+
+.forecast-row::after {
+  right: 0;
+  animation: forecastRowEdge 4.3s ease-in-out infinite 0.9s reverse;
+}
+
+.forecast-row:hover {
+  transform: translateY(-2px);
+  border-color: rgba(137, 180, 219, 0.28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 16px 26px rgba(98, 135, 176, 0.12);
 }
 
 .forecast-row .day {
@@ -730,8 +1162,262 @@ h1 {
 .forecast-weather {
   display: flex;
   align-items: center;
-  gap: 10px;
-  width: 140px;
+  gap: 12px;
+  width: 156px;
+}
+
+.forecast-animation {
+  position: relative;
+  width: 40px;
+  height: 30px;
+  flex-shrink: 0;
+  animation: forecastIconFloat 4.6s ease-in-out infinite;
+}
+
+.forecast-animation::before,
+.forecast-animation::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.forecast-animation::before {
+  inset: 4px 0 2px;
+  background: radial-gradient(circle, var(--forecast-accent-soft), transparent 72%);
+  filter: blur(6px);
+  opacity: 0.9;
+}
+
+.forecast-animation::after {
+  top: 2px;
+  bottom: 3px;
+  right: -2px;
+  width: 2px;
+  background: linear-gradient(180deg, transparent, var(--forecast-accent), transparent);
+  opacity: 0.6;
+  animation: forecastSignalPulse 2.8s ease-in-out infinite;
+}
+
+.forecast-sun-core,
+.forecast-sun-ring,
+.forecast-cloud-shape,
+.forecast-drop,
+.forecast-bolt,
+.forecast-flake,
+.forecast-fog-line,
+.forecast-moon-core {
+  position: absolute;
+}
+
+.forecast-sun-core {
+  top: 2px;
+  left: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff6c6, #f7c64f 68%, #f0a326);
+}
+
+.forecast-sun-ring {
+  top: -1px;
+  left: 1px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid rgba(247, 198, 79, 0.35);
+}
+
+.forecast-cloud-shape {
+  background: linear-gradient(180deg, #ffffff, #dfeefe);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.forecast-cloud-main {
+  right: 2px;
+  bottom: 5px;
+  width: 22px;
+  height: 11px;
+  border-radius: 999px;
+}
+
+.forecast-cloud-main::before,
+.forecast-cloud-main::after,
+.forecast-cloud-small::before {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  background: inherit;
+}
+
+.forecast-cloud-main::before {
+  left: 2px;
+  bottom: 4px;
+  width: 10px;
+  height: 10px;
+}
+
+.forecast-cloud-main::after {
+  right: 2px;
+  bottom: 5px;
+  width: 12px;
+  height: 12px;
+}
+
+.forecast-cloud-small {
+  left: 8px;
+  bottom: 8px;
+  width: 14px;
+  height: 8px;
+  border-radius: 999px;
+  opacity: 0.82;
+}
+
+.forecast-cloud-small::before {
+  left: 1px;
+  bottom: 3px;
+  width: 8px;
+  height: 8px;
+}
+
+.forecast-drop {
+  bottom: -2px;
+  width: 3px;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #79a8ff, #4285f4);
+  opacity: 0.95;
+  box-shadow: 0 0 8px rgba(66, 133, 244, 0.14);
+}
+
+.drop-one {
+  left: 11px;
+  animation: forecastRain 1.2s ease-in-out infinite;
+}
+
+.drop-two {
+  left: 18px;
+  animation: forecastRain 1.2s ease-in-out infinite 0.22s;
+}
+
+.drop-three {
+  left: 25px;
+  animation: forecastRain 1.2s ease-in-out infinite 0.45s;
+}
+
+.forecast-bolt {
+  left: 18px;
+  bottom: -2px;
+  width: 12px;
+  height: 16px;
+  background: #f7c64f;
+  clip-path: polygon(42% 0, 100% 0, 62% 45%, 86% 45%, 22% 100%, 42% 56%, 18% 56%);
+  animation: forecastBolt 1.8s ease-in-out infinite;
+}
+
+.forecast-flake {
+  bottom: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #90b5e8;
+}
+
+.flake-one {
+  left: 11px;
+  animation: forecastSnow 1.8s ease-in-out infinite;
+}
+
+.flake-two {
+  left: 18px;
+  animation: forecastSnow 1.8s ease-in-out infinite 0.28s;
+}
+
+.flake-three {
+  left: 25px;
+  animation: forecastSnow 1.8s ease-in-out infinite 0.5s;
+}
+
+.forecast-fog-line {
+  left: 4px;
+  width: 24px;
+  height: 3px;
+  border-radius: 999px;
+  background: #a9c1db;
+  opacity: 0.85;
+}
+
+.fog-one {
+  bottom: 1px;
+  animation: forecastFog 2.2s ease-in-out infinite;
+}
+
+.fog-two {
+  bottom: -4px;
+  width: 18px;
+  left: 8px;
+  animation: forecastFog 2.2s ease-in-out infinite 0.35s;
+}
+
+.forecast-moon-core {
+  top: 2px;
+  left: 8px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #dbe8ff, #b7c9ee);
+}
+
+.forecast-moon-core::after {
+  content: "";
+  position: absolute;
+  inset: 1px 1px 1px 6px;
+  border-radius: 50%;
+  background: #eef5ff;
+}
+
+.forecast-anim-sunny .forecast-sun-core {
+  animation: forecastSunPulse 3s ease-in-out infinite;
+}
+
+.forecast-anim-sunny .forecast-sun-ring {
+  animation: forecastSpin 8s linear infinite;
+}
+
+.forecast-anim-partly .forecast-sun-core {
+  animation: forecastSunPulse 3s ease-in-out infinite;
+}
+
+.forecast-anim-partly .forecast-cloud-main,
+.forecast-anim-partly .forecast-cloud-small,
+.forecast-anim-cloudy .forecast-cloud-main,
+.forecast-anim-cloudy .forecast-cloud-small,
+.forecast-anim-rain .forecast-cloud-main,
+.forecast-anim-rain .forecast-cloud-small,
+.forecast-anim-storm .forecast-cloud-main,
+.forecast-anim-storm .forecast-cloud-small,
+.forecast-anim-snow .forecast-cloud-main,
+.forecast-anim-snow .forecast-cloud-small,
+.forecast-anim-fog .forecast-cloud-main {
+  animation: forecastCloudDrift 3.6s ease-in-out infinite;
+}
+
+.forecast-anim-partly .forecast-cloud-small,
+.forecast-anim-cloudy .forecast-cloud-small,
+.forecast-anim-rain .forecast-cloud-small,
+.forecast-anim-storm .forecast-cloud-small,
+.forecast-anim-snow .forecast-cloud-small {
+  animation-delay: 0.35s;
+}
+
+.forecast-anim-rain,
+.forecast-anim-storm,
+.forecast-anim-snow {
+  animation-duration: 4.1s;
+}
+
+.forecast-anim-moon .forecast-moon-core {
+  animation: forecastMoonFloat 3.4s ease-in-out infinite;
 }
 
 .forecast-row .condition {
@@ -742,10 +1428,11 @@ h1 {
 .temperature-band {
   position: relative;
   flex: 1;
-  height: 8px;
+  height: 10px;
   border-radius: 999px;
-  background: rgba(66, 133, 244, 0.12);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.52), var(--forecast-accent-soft));
   overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
 }
 
 .band-fill {
@@ -755,7 +1442,17 @@ h1 {
   width: var(--width);
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #f7c64f, #4285f4);
+  background: linear-gradient(90deg, var(--forecast-accent-soft), var(--forecast-accent));
+  box-shadow: 0 0 18px var(--forecast-glow);
+}
+
+.band-fill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 15%, rgba(255, 255, 255, 0.8) 48%, transparent 72%);
+  transform: translateX(-120%);
+  animation: forecastBandSheen 3.6s linear infinite;
 }
 
 .forecast-row > strong,
@@ -827,6 +1524,338 @@ h1 {
 
 .air-card h3 {
   color: var(--green);
+}
+
+@keyframes forecastSunPulse {
+  0%,
+  100% {
+    transform: scale(0.96);
+    box-shadow: 0 0 0 rgba(247, 198, 79, 0.35);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 0 10px rgba(247, 198, 79, 0.4);
+  }
+}
+
+@keyframes heroSceneFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes heroBeamPulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scaleY(0.9);
+  }
+  50% {
+    opacity: 0.72;
+    transform: scaleY(1.05);
+  }
+}
+
+@keyframes heroSideSlide {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes heroOrbitSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes heroOrbitSpinReverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes heroParticleDrift {
+  0%,
+  100% {
+    transform: translateY(0) scale(0.86);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateY(-10px) scale(1.15);
+    opacity: 1;
+  }
+}
+
+@keyframes heroFloorPulse {
+  0%,
+  100% {
+    transform: translateX(-50%) scaleX(0.92);
+    opacity: 0.45;
+  }
+  50% {
+    transform: translateX(-50%) scaleX(1.08);
+    opacity: 0.7;
+  }
+}
+
+@keyframes heroSunPulse {
+  0%,
+  100% {
+    transform: scale(0.98);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes heroHaloPulse {
+  0%,
+  100% {
+    transform: scale(0.95);
+    opacity: 0.65;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+
+@keyframes heroCloudFloat {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(6px);
+  }
+}
+
+@keyframes heroRainFall {
+  0% {
+    transform: translateY(-6px);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(18px);
+    opacity: 0;
+  }
+}
+
+@keyframes heroSnowFall {
+  0% {
+    transform: translateY(-3px) scale(0.7);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(16px) scale(1.08);
+    opacity: 0;
+  }
+}
+
+@keyframes heroFogSweep {
+  0%,
+  100% {
+    transform: translateX(0);
+    opacity: 0.68;
+  }
+  50% {
+    transform: translateX(10px);
+    opacity: 1;
+  }
+}
+
+@keyframes heroBoltFlash {
+  0%,
+  72%,
+  100% {
+    opacity: 0.22;
+    transform: scaleY(0.9);
+  }
+  76%,
+  84% {
+    opacity: 1;
+    transform: scaleY(1.08);
+  }
+}
+
+@keyframes heroMoonFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes heroStarPulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.86);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.18);
+  }
+}
+
+@keyframes forecastSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes forecastEdgePulse {
+  0%,
+  100% {
+    opacity: 0.26;
+    transform: scaleY(0.84);
+  }
+  50% {
+    opacity: 0.78;
+    transform: scaleY(1.06);
+  }
+}
+
+@keyframes forecastRowEdge {
+  0%,
+  100% {
+    opacity: 0.38;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.92;
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes forecastIconFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes forecastSignalPulse {
+  0%,
+  100% {
+    opacity: 0.28;
+    transform: scaleY(0.82);
+  }
+  50% {
+    opacity: 0.72;
+    transform: scaleY(1.1);
+  }
+}
+
+@keyframes forecastCloudDrift {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(2px);
+  }
+}
+
+@keyframes forecastRain {
+  0% {
+    transform: translateY(-2px);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(6px);
+    opacity: 0;
+  }
+}
+
+@keyframes forecastBolt {
+  0%,
+  72%,
+  100% {
+    opacity: 0.25;
+    transform: scaleY(0.92);
+  }
+  76%,
+  84% {
+    opacity: 1;
+    transform: scaleY(1.08);
+  }
+}
+
+@keyframes forecastSnow {
+  0% {
+    transform: translateY(-1px) scale(0.8);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(6px) scale(1.05);
+    opacity: 0;
+  }
+}
+
+@keyframes forecastFog {
+  0%,
+  100% {
+    transform: translateX(0);
+    opacity: 0.72;
+  }
+  50% {
+    transform: translateX(2px);
+    opacity: 1;
+  }
+}
+
+@keyframes forecastMoonFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1px);
+  }
+}
+
+@keyframes forecastBandSheen {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
 }
 
 @media (max-width: 1120px) {
@@ -944,5 +1973,16 @@ h1 {
 
   .forecast-row .condition {
     font-size: 0.86rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-scene *,
+  .hero-visual::before,
+  .hero-visual::after,
+  .forecast-animation *,
+  .forecast-animation::before,
+  .forecast-animation::after {
+    animation: none !important;
   }
 }
