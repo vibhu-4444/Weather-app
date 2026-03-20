@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WeatherX</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section class="weather-card" aria-label="WeatherX preview">
+      <div class="ambient-scene" aria-hidden="true">
+        <span class="ambient-wave wave-one"></span>
+        <span class="ambient-wave wave-two"></span>
+        <span class="ambient-wave wave-three"></span>
+        <span class="ambient-grid"></span>
+        <span class="ambient-particle particle-one"></span>
+        <span class="ambient-particle particle-two"></span>
+        <span class="ambient-particle particle-three"></span>
+        <span class="ambient-particle particle-four"></span>
+      </div>
+      <div class="card-glow card-glow-left" aria-hidden="true"></div>
+      <div class="card-glow card-glow-right" aria-hidden="true"></div>
+
+      <header class="topbar">
+        <div class="branding">
+          <p class="eyebrow">Next-gen forecast</p>
+          <h1>WeatherX</h1>
+        </div>
+        <span class="status-pill">Live</span>
+      </header>
+
+      <label class="search-box" for="location">
+        <span class="search-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+            <path d="M10.5 4a6.5 6.5 0 1 0 4.09 11.55l4.43 4.44 1.41-1.42-4.43-4.43A6.5 6.5 0 0 0 10.5 4Zm0 2a4.5 4.5 0 1 1 0 9.01 4.5 4.5 0 0 1 0-9.01Z" />
+          </svg>
+        </span>
+        <input id="location" type="text" placeholder="Search city, airport, or region">
+      </label>
+
+      <section class="weather-main">
+        <div class="weather-stage" aria-hidden="true">
+          <div class="weather-shadow"></div>
+          <div class="weather-icon">
+            <span class="sun-ring ring-one"></span>
+            <span class="sun-ring ring-two"></span>
+            <span class="orbit orbit-one"></span>
+            <span class="orbit orbit-two"></span>
+            <span class="spark spark-one"></span>
+            <span class="spark spark-two"></span>
+            <span class="spark spark-three"></span>
+            <span class="wind-line wind-one"></span>
+            <span class="wind-line wind-two"></span>
+            <div class="sun"></div>
+            <div class="cloud cloud-back"></div>
+            <div class="cloud cloud-front"></div>
+          </div>
+        </div>
+
+        <div class="temperature-block">
+          <p class="temperature">28&deg;</p>
+          <h2>Bengaluru</h2>
+          <p class="weather-condition">Clear Skies</p>
+          <p class="weather-summary">Golden sunlight, smooth breeze, and a crisp high-visibility afternoon.</p>
+        </div>
+      </section>
+
+      <section class="details-section" aria-label="Weather details">
+        <article class="detail-card" style="--fill: 68%;">
+          <div class="detail-top">
+            <span class="detail-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                <path d="M12 2.5c-2.73 3.4-5.5 6.91-5.5 10.24A5.5 5.5 0 0 0 12 18.24a5.5 5.5 0 0 0 5.5-5.5C17.5 9.41 14.73 5.9 12 2.5Z"></path>
+              </svg>
+            </span>
+            <p>Humidity</p>
+          </div>
+          <h3>68%</h3>
+          <p class="detail-copy">Balanced moisture with a comfortable feel.</p>
+          <div class="detail-bar" aria-hidden="true"><span></span></div>
+        </article>
+
+        <article class="detail-card" style="--fill: 54%;">
+          <div class="detail-top">
+            <span class="detail-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                <path d="M3 12c4.5-5.5 9-5.5 13.5 0H13a3 3 0 1 1-6 0H3Zm10 5c2.18-2.96 4.5-2.96 7 0h-7Z"></path>
+              </svg>
+            </span>
+            <p>Wind Speed</p>
+          </div>
+          <h3>12 km/h</h3>
+          <p class="detail-copy">Soft movement flowing from the south-west.</p>
+          <div class="detail-bar" aria-hidden="true"><span></span></div>
+        </article>
+
+        <article class="detail-card" style="--fill: 81%;">
+          <div class="detail-top">
+            <span class="detail-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                <path d="M12 4a8 8 0 1 0 8 8A8.01 8.01 0 0 0 12 4Zm1 8.59 2.7 2.7-1.41 1.41L11 13.41V8h2Z"></path>
+              </svg>
+            </span>
+            <p>Pressure</p>
+          </div>
+          <h3>1014 hPa</h3>
+          <p class="detail-copy">Stable atmospheric pressure across the city.</p>
+          <div class="detail-bar" aria-hidden="true"><span></span></div>
+        </article>
+
+        <article class="detail-card" style="--fill: 84%;">
+          <div class="detail-top">
+            <span class="detail-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                <path d="M12 5c-5.23 0-9.27 4.18-10 6.99C2.73 14.82 6.77 19 12 19s9.27-4.18 10-7.01C21.27 9.18 17.23 5 12 5Zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z"></path>
+              </svg>
+            </span>
+            <p>Visibility</p>
+          </div>
+          <h3>8.4 km</h3>
+          <p class="detail-copy">Long-distance clarity with minimal haze.</p>
+          <div class="detail-bar" aria-hidden="true"><span></span></div>
+        </article>
+      </section>
+    </section>
+  </main>
+  <script>
+    const weatherCard = document.querySelector(".weather-card");
+
+    if (weatherCard && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+      const resetTilt = () => {
+        weatherCard.style.setProperty("--pointer-x", "0");
+        weatherCard.style.setProperty("--pointer-y", "0");
+      };
+
+      resetTilt();
+
+      weatherCard.addEventListener("pointermove", (event) => {
+        const bounds = weatherCard.getBoundingClientRect();
+        const pointerX = (event.clientX - bounds.left) / bounds.width - 0.5;
+        const pointerY = (event.clientY - bounds.top) / bounds.height - 0.5;
+
+        weatherCard.style.setProperty("--pointer-x", pointerX.toFixed(3));
+        weatherCard.style.setProperty("--pointer-y", pointerY.toFixed(3));
+      });
+
+      weatherCard.addEventListener("pointerleave", resetTilt);
+    }
+  </script>
+</body>
+</html>
