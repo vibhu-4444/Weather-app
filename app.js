@@ -2,6 +2,8 @@
 const WEATHER_ENDPOINT = "https://api.open-meteo.com/v1/forecast";
 const GEOCODING_ENDPOINT = "https://geocoding-api.open-meteo.com/v1/search";
 const AIR_QUALITY_ENDPOINT = "https://air-quality-api.open-meteo.com/v1/air-quality";
+const SAVED_CITIES_STORAGE_KEY = "weatherx.saved-cities";
+const MAX_SAVED_CITIES = 6;
 
 const CURRENT_FIELDS = [
   "temperature_2m",
@@ -107,7 +109,11 @@ const refs = {
   searchForm: document.querySelector("#search-form"),
   locationInput: document.querySelector("#location"),
   searchAction: document.querySelector("#search-action"),
+  saveCityAction: document.querySelector("#save-city-action"),
   locationAction: document.querySelector("#location-action"),
+  savedCitiesCount: document.querySelector("#saved-cities-count"),
+  savedCitiesCopy: document.querySelector("#saved-cities-copy"),
+  savedCitiesList: document.querySelector("#saved-cities-list"),
   metricButtons: document.querySelectorAll(".mode-tab")
 };
 
@@ -115,9 +121,14 @@ const state = {
   metric: "temperature",
   activeHourIndex: 0,
   requestId: 0,
+  savedCitiesRequestId: 0,
+  isLoading: false,
   location: null,
   forecast: null,
-  air: null
+  air: null,
+  savedCities: loadSavedCities(),
+  savedCityWeather: [],
+  savedCitiesLoading: false
 };
 
 refs.metricButtons.forEach((button) => {
@@ -149,6 +160,10 @@ refs.locationAction.addEventListener("click", async () => {
   await loadWeatherByCoordinates();
 });
 
+refs.saveCityAction.addEventListener("click", () => {
+  addCurrentCityToSavedList();
+});
+
 refs.hourlyStrip.addEventListener("click", (event) => {
   const card = event.target.closest(".hour-card");
   if (!card) {
@@ -175,6 +190,21 @@ refs.hourlyNext.addEventListener("click", () => {
 refs.hourlyStrip.addEventListener("scroll", syncHourlySliderState, { passive: true });
 window.addEventListener("resize", syncHourlySliderState);
 
+refs.savedCitiesList.addEventListener("click", async (event) => {
+  const removeButton = event.target.closest(".saved-city-remove");
+  if (removeButton) {
+    removeSavedCity(removeButton.dataset.cityKey);
+    return;
+  }
+
+  const cityButton = event.target.closest(".saved-city-main");
+  if (!cityButton) {
+    return;
+  }
+
+  await loadSavedCity(cityButton.dataset.cityKey);
+});
+
 if (!HAS_GEOLOCATION) {
   refs.locationAction.disabled = true;
   refs.locationAction.textContent = "Location unavailable";
@@ -186,6 +216,7 @@ requestAnimationFrame(() => {
   document.body.classList.add("app-ready");
   syncHourlySliderState();
 });
+refreshSavedCitiesWeather();
 loadWeather(DEFAULT_QUERY);
 
 async function loadWeather(query) {
@@ -352,10 +383,12 @@ async function fetchJson(url) {
 }
 
 function renderApp() {
+  syncCurrentLocationWithSavedCities();
   renderHero();
   updateMetricButtons();
   renderTrendSection();
   renderForecastSection();
+  renderSavedCitiesSection();
   renderDetailsSection();
   requestAnimationFrame(syncHourlySliderState);
 }
@@ -1065,6 +1098,7 @@ function renderLoadingState() {
   refs.hourlyStrip.innerHTML = '<button class="hour-card active" type="button" disabled><p>Loading</p><strong>--</strong><span class="hour-card-note">Forecast</span></button>';
   refs.forecastList.innerHTML = '<div class="forecast-row placeholder-row">Loading 10-day forecast...</div>';
   refs.detailsGrid.innerHTML = '<article class="detail-card"><p>Loading</p><h3>--</h3><span>Waiting for live weather details.</span></article>';
+  renderSavedCitiesSection();
   syncHourlySliderState();
 }
 
@@ -1075,6 +1109,7 @@ function updateMetricButtons() {
 }
 
 function setLoading(isLoading, message = "", action = "search") {
+  state.isLoading = isLoading;
   document.body.classList.toggle("is-loading", isLoading);
   refs.searchAction.disabled = isLoading;
   refs.locationAction.disabled = isLoading || !HAS_GEOLOCATION;
@@ -1084,6 +1119,7 @@ function setLoading(isLoading, message = "", action = "search") {
     : isLoading && action === "location"
       ? "Locating..."
       : "Use my location";
+  updateSaveCityAction();
 
   if (message) {
     setStatus(message, isLoading ? "loading" : "info");
@@ -1093,6 +1129,296 @@ function setLoading(isLoading, message = "", action = "search") {
 function setStatus(message, stateName = "info") {
   refs.statusMessage.textContent = message;
   refs.statusMessage.dataset.state = stateName;
+}
+
+function renderSavedCitiesSection() {
+  const count = state.savedCities.length;
+  refs.savedCitiesCount.textContent = `${count} saved`;
+
+  if (!count) {
+    refs.savedCitiesCopy.textContent = "Search for a city, then use Add city to pin it here.";
+    refs.savedCitiesList.innerHTML = `
+      <div class="saved-city-empty">
+        <strong>No saved cities yet</strong>
+        <span>Your pinned city weather will appear here.</span>
+      </div>
+    `;
+    updateSaveCityAction();
+    return;
+  }
+
+  refs.savedCitiesCopy.textContent = state.savedCitiesLoading
+    ? "Refreshing live weather for your saved cities..."
+    : "Select any saved city to load its full forecast.";
+
+  refs.savedCitiesList.innerHTML = state.savedCities.map((city, index) => {
+    const snapshot = getSavedCitySnapshot(city.key);
+    const weather = snapshot
+      ? getWeatherMeta(snapshot.weatherCode, snapshot.isDay)
+      : { shortLabel: "Loading...", icon: "cloudy", motion: "cloudy" };
+    const climate = getClimateTheme(weather);
+    const locationLine = buildLocationLine(city) || city.country || "Saved city";
+    const note = snapshot
+      ? `${weather.shortLabel} • H ${snapshot.high}° L ${snapshot.low}°`
+      : state.savedCitiesLoading
+        ? "Loading live weather..."
+        : "Weather unavailable right now.";
+
+    return `
+      <article class="saved-city-item" style="--card-index: ${index}; --saved-accent: ${climate.accent}; --saved-soft: ${climate.soft}; --saved-glow: ${climate.glow};">
+        <button class="saved-city-main" type="button" data-city-key="${escapeHtml(city.key)}" aria-label="Show weather for ${escapeHtml(city.name)}">
+          <span class="saved-city-glyph">${buildWeatherGlyph(weather, "forecast")}</span>
+          <span class="saved-city-content">
+            <span class="saved-city-topline">
+              <strong class="saved-city-name">${escapeHtml(city.name)}</strong>
+              <span class="saved-city-temp">${snapshot ? `${snapshot.temperature}°` : "--"}</span>
+            </span>
+            <span class="saved-city-meta">${escapeHtml(locationLine)}</span>
+            <span class="saved-city-note">${escapeHtml(note)}</span>
+          </span>
+        </button>
+        <button class="saved-city-remove" type="button" data-city-key="${escapeHtml(city.key)}" aria-label="Remove ${escapeHtml(city.name)} from saved cities">
+          Remove
+        </button>
+      </article>
+    `;
+  }).join("");
+
+  updateSaveCityAction();
+}
+
+function updateSaveCityAction() {
+  const currentCityKey = state.location ? buildSavedCityKey(state.location) : "";
+  const alreadySaved = Boolean(currentCityKey && state.savedCities.some((city) => city.key === currentCityKey));
+  const atLimit = state.savedCities.length >= MAX_SAVED_CITIES;
+  const canSave = Boolean(state.location && state.forecast) && !state.isLoading && !alreadySaved && !atLimit;
+
+  refs.saveCityAction.disabled = !canSave;
+  refs.saveCityAction.textContent = alreadySaved
+    ? "Added"
+    : atLimit
+      ? "Limit reached"
+      : "Add city";
+  refs.saveCityAction.title = !state.location
+    ? "Load a city first to save it."
+    : alreadySaved
+      ? `${state.location.name} is already in your saved cities.`
+      : atLimit
+        ? `You can save up to ${MAX_SAVED_CITIES} cities.`
+        : `Save ${state.location.name} to your city list.`;
+}
+
+async function refreshSavedCitiesWeather() {
+  const cities = [...state.savedCities];
+  const requestId = ++state.savedCitiesRequestId;
+
+  if (!cities.length) {
+    state.savedCityWeather = [];
+    state.savedCitiesLoading = false;
+    renderSavedCitiesSection();
+    return;
+  }
+
+  state.savedCitiesLoading = true;
+  renderSavedCitiesSection();
+
+  const nextSnapshots = [...state.savedCityWeather];
+
+  await Promise.all(cities.map(async (city) => {
+    try {
+      const forecast = await fetchForecast(city);
+      upsertSavedCitySnapshot(buildSavedCitySummary(city, forecast), nextSnapshots);
+    } catch (error) {
+      console.error(`Unable to refresh saved city "${city.name}".`, error);
+    }
+  }));
+
+  if (requestId !== state.savedCitiesRequestId) {
+    return;
+  }
+
+  const allowedKeys = new Set(cities.map((city) => city.key));
+  state.savedCityWeather = nextSnapshots.filter((entry) => allowedKeys.has(entry.key));
+  state.savedCitiesLoading = false;
+  renderSavedCitiesSection();
+}
+
+function addCurrentCityToSavedList() {
+  if (!state.location || !state.forecast) {
+    return;
+  }
+
+  const savedCity = normalizeSavedCity(state.location);
+  if (!savedCity) {
+    setStatus("This city cannot be saved right now.", "error");
+    return;
+  }
+  const existingIndex = state.savedCities.findIndex((city) => city.key === savedCity.key);
+
+  if (existingIndex >= 0) {
+    state.savedCities[existingIndex] = savedCity;
+    persistSavedCities();
+    upsertSavedCitySnapshot(buildSavedCitySummary(savedCity, state.forecast));
+    renderSavedCitiesSection();
+    setStatus(`${savedCity.name} is already in your saved cities.`, "success");
+    return;
+  }
+
+  if (state.savedCities.length >= MAX_SAVED_CITIES) {
+    setStatus(`You can save up to ${MAX_SAVED_CITIES} cities. Remove one to add another.`, "error");
+    updateSaveCityAction();
+    return;
+  }
+
+  state.savedCities = [savedCity, ...state.savedCities];
+  persistSavedCities();
+  upsertSavedCitySnapshot(buildSavedCitySummary(savedCity, state.forecast));
+  renderSavedCitiesSection();
+  setStatus(`${savedCity.name} added to your saved cities.`, "success");
+}
+
+function removeSavedCity(cityKey) {
+  const city = state.savedCities.find((entry) => entry.key === cityKey);
+  if (!city) {
+    return;
+  }
+
+  state.savedCities = state.savedCities.filter((entry) => entry.key !== cityKey);
+  state.savedCityWeather = state.savedCityWeather.filter((entry) => entry.key !== cityKey);
+  persistSavedCities();
+  renderSavedCitiesSection();
+  setStatus(`${city.name} removed from your saved cities.`, "info");
+}
+
+async function loadSavedCity(cityKey) {
+  const savedCity = state.savedCities.find((city) => city.key === cityKey);
+  if (!savedCity) {
+    return;
+  }
+
+  const requestId = ++state.requestId;
+  setLoading(true, `Loading live weather for ${savedCity.name}...`, "search");
+
+  try {
+    const hydratedLocation = await hydrateLocation({ ...savedCity, source: "saved" }, requestId);
+    if (!hydratedLocation || requestId !== state.requestId) {
+      return;
+    }
+
+    refs.locationInput.value = hydratedLocation.name;
+    setStatus(`Live data updated for ${buildStatusLocationLabel(hydratedLocation)}.`, "success");
+  } catch (error) {
+    if (requestId !== state.requestId) {
+      return;
+    }
+
+    console.error(error);
+    setStatus(error.message || `Unable to load weather for ${savedCity.name}.`, "error");
+  } finally {
+    if (requestId === state.requestId) {
+      setLoading(false);
+    }
+  }
+}
+
+function syncCurrentLocationWithSavedCities() {
+  if (!state.location || !state.forecast) {
+    updateSaveCityAction();
+    return;
+  }
+
+  const savedCity = normalizeSavedCity(state.location);
+  if (!savedCity) {
+    updateSaveCityAction();
+    return;
+  }
+  const savedIndex = state.savedCities.findIndex((city) => city.key === savedCity.key);
+  if (savedIndex >= 0) {
+    state.savedCities[savedIndex] = savedCity;
+    persistSavedCities();
+    upsertSavedCitySnapshot(buildSavedCitySummary(savedCity, state.forecast));
+  }
+
+  updateSaveCityAction();
+}
+
+function buildSavedCitySummary(location, forecast) {
+  const current = forecast.current || {};
+  const daily = forecast.daily || {};
+
+  return {
+    key: buildSavedCityKey(location),
+    temperature: Math.round(current.temperature_2m ?? 0),
+    high: Math.round(daily.temperature_2m_max?.[0] ?? current.temperature_2m ?? 0),
+    low: Math.round(daily.temperature_2m_min?.[0] ?? current.temperature_2m ?? 0),
+    weatherCode: current.weather_code ?? 3,
+    isDay: Boolean(current.is_day),
+    updatedTime: current.time || ""
+  };
+}
+
+function upsertSavedCitySnapshot(snapshot, target = state.savedCityWeather) {
+  const index = target.findIndex((entry) => entry.key === snapshot.key);
+  if (index >= 0) {
+    target[index] = snapshot;
+    return;
+  }
+
+  target.push(snapshot);
+}
+
+function getSavedCitySnapshot(cityKey) {
+  return state.savedCityWeather.find((entry) => entry.key === cityKey) || null;
+}
+
+function loadSavedCities() {
+  try {
+    const rawValue = localStorage.getItem(SAVED_CITIES_STORAGE_KEY);
+    if (!rawValue) {
+      return [];
+    }
+
+    const parsedValue = JSON.parse(rawValue);
+    if (!Array.isArray(parsedValue)) {
+      return [];
+    }
+
+    return parsedValue
+      .map(normalizeSavedCity)
+      .filter(Boolean)
+      .slice(0, MAX_SAVED_CITIES);
+  } catch (error) {
+    console.error("Unable to read saved cities from local storage.", error);
+    return [];
+  }
+}
+
+function persistSavedCities() {
+  try {
+    localStorage.setItem(SAVED_CITIES_STORAGE_KEY, JSON.stringify(state.savedCities));
+  } catch (error) {
+    console.error("Unable to save cities to local storage.", error);
+  }
+}
+
+function normalizeSavedCity(location) {
+  if (!location || !Number.isFinite(Number(location.latitude)) || !Number.isFinite(Number(location.longitude))) {
+    return null;
+  }
+
+  return {
+    key: buildSavedCityKey(location),
+    name: String(location.name || "Saved city"),
+    admin1: String(location.admin1 || ""),
+    country: String(location.country || ""),
+    latitude: Number(location.latitude),
+    longitude: Number(location.longitude),
+    timezone: String(location.timezone || "auto")
+  };
+}
+
+function buildSavedCityKey(location) {
+  return `${Number(location.latitude).toFixed(3)},${Number(location.longitude).toFixed(3)}`;
 }
 
 function buildLocationLine(location) {

@@ -116,6 +116,10 @@ body.app-ready .forecast-card {
   animation: panelReveal 0.82s cubic-bezier(0.22, 1, 0.36, 1) 0.14s both;
 }
 
+body.app-ready .saved-cities-card {
+  animation: panelReveal 0.82s cubic-bezier(0.22, 1, 0.36, 1) 0.18s both;
+}
+
 body.app-ready .highlights-card {
   animation: panelReveal 0.82s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
 }
@@ -208,6 +212,8 @@ h1 {
   align-items: center;
   gap: 10px;
   flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .search-box {
@@ -253,6 +259,7 @@ h1 {
 }
 
 .search-action,
+.save-city-action,
 .location-action,
 .mode-tab {
   border: none;
@@ -278,6 +285,29 @@ h1 {
 .search-action:disabled {
   opacity: 0.72;
   cursor: wait;
+}
+
+.save-city-action {
+  flex-shrink: 0;
+  padding: 15px 18px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(234, 243, 255, 0.96), rgba(219, 233, 250, 0.92));
+  color: var(--text-main);
+  font-weight: 600;
+  border: 1px solid rgba(137, 180, 219, 0.34);
+  box-shadow: 0 10px 20px rgba(95, 136, 180, 0.12);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.save-city-action:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: linear-gradient(180deg, rgba(243, 248, 255, 0.98), rgba(227, 238, 252, 0.94));
+  box-shadow: 0 14px 26px rgba(95, 136, 180, 0.16);
+}
+
+.save-city-action:disabled {
+  opacity: 0.74;
+  cursor: not-allowed;
 }
 
 .location-action {
@@ -1143,6 +1173,17 @@ h1 {
   grid-column: 1 / 2;
 }
 
+.saved-cities-card {
+  grid-column: 2 / 3;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-self: start;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.82), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(238, 246, 255, 0.94));
+}
+
 .forecast-card {
   grid-column: 2 / 3;
   grid-row: 1 / span 2;
@@ -1178,6 +1219,180 @@ h1 {
 .forecast-card::after {
   right: 10px;
   animation-delay: 1.7s;
+}
+
+.saved-cities-copy {
+  color: var(--text-soft);
+  font-size: 0.96rem;
+  line-height: 1.5;
+}
+
+.saved-cities-list {
+  display: grid;
+  gap: 14px;
+}
+
+.saved-city-empty {
+  display: grid;
+  gap: 6px;
+  place-items: center;
+  text-align: center;
+  padding: 24px 18px;
+  border-radius: 24px;
+  border: 1px dashed rgba(137, 180, 219, 0.36);
+  background: linear-gradient(180deg, rgba(247, 251, 255, 0.9), rgba(236, 245, 255, 0.84));
+  color: var(--text-soft);
+}
+
+.saved-city-empty strong {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1rem;
+  color: var(--text-main);
+}
+
+.saved-city-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 24px;
+  border: 1px solid rgba(137, 180, 219, 0.22);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(243, 249, 255, 0.88));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78), 0 12px 22px rgba(98, 135, 176, 0.1);
+  overflow: hidden;
+  transform: translateY(var(--card-lift, 0px));
+  transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease;
+  animation: cardPop 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--card-index, 0) * 60ms + 0.16s);
+}
+
+.saved-city-item::before {
+  content: "";
+  position: absolute;
+  top: -28px;
+  right: -10px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--saved-soft, rgba(66, 133, 244, 0.14)), transparent 68%);
+  opacity: 0.92;
+}
+
+.saved-city-item:hover {
+  --card-lift: -3px;
+  border-color: rgba(137, 180, 219, 0.32);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82), 0 18px 28px rgba(98, 135, 176, 0.14);
+}
+
+.saved-city-main,
+.saved-city-remove {
+  position: relative;
+  z-index: 1;
+}
+
+.saved-city-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.saved-city-main:focus-visible,
+.saved-city-remove:focus-visible {
+  outline: 2px solid rgba(66, 133, 244, 0.44);
+  outline-offset: 4px;
+}
+
+.saved-city-glyph {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  flex-shrink: 0;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(236, 245, 255, 0.82));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 10px 18px rgba(95, 136, 180, 0.1);
+}
+
+.saved-city-glyph .weather-glyph {
+  transform: scale(0.92);
+}
+
+.saved-city-content {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.saved-city-topline {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.saved-city-name {
+  min-width: 0;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.02rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.saved-city-temp {
+  flex-shrink: 0;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--text-main);
+}
+
+.saved-city-meta,
+.saved-city-note {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.saved-city-meta {
+  color: var(--text-soft);
+  font-size: 0.88rem;
+}
+
+.saved-city-note {
+  color: var(--text-faint);
+  font-size: 0.82rem;
+}
+
+.saved-city-remove {
+  align-self: stretch;
+  padding: 0 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(137, 180, 219, 0.28);
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--text-soft);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.saved-city-remove:hover {
+  transform: translateY(-1px);
+  background: #ffffff;
+  color: var(--danger);
+  box-shadow: 0 12px 20px rgba(95, 136, 180, 0.12);
 }
 
 .card-head {
@@ -1466,6 +1681,20 @@ h1 {
 .hourly-slider {
   position: relative;
   margin-top: 18px;
+  --hourly-pad-left: 18px;
+  --hourly-pad-right: 18px;
+}
+
+.hourly-slider.can-scroll-left {
+  --hourly-pad-left: 56px;
+}
+
+.hourly-slider.can-scroll-right {
+  --hourly-pad-right: 56px;
+}
+
+.hourly-slider.is-scrollable:not(.can-scroll-right) {
+  --hourly-pad-right: 18px;
 }
 
 .hourly-slider::before,
@@ -1542,11 +1771,12 @@ h1 {
   display: flex;
   gap: 14px;
   margin-top: 0;
-  padding: 8px 56px 10px;
+  padding: 8px var(--hourly-pad-right) 10px var(--hourly-pad-left);
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scroll-snap-type: x proximity;
   scrollbar-width: none;
+  transition: padding 0.22s ease;
 }
 
 .hourly-strip::-webkit-scrollbar {
@@ -2078,6 +2308,10 @@ h1 {
   transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
   animation: cardPop 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: calc(var(--card-index, 0) * 60ms + 0.12s);
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .forecast-row > * {
@@ -3302,6 +3536,7 @@ h1 {
 
   .chart-card,
   .forecast-card,
+  .saved-cities-card,
   .highlights-card {
     grid-column: auto;
     grid-row: auto;
@@ -3311,8 +3546,12 @@ h1 {
     order: 2;
   }
 
-  .highlights-card {
+  .saved-cities-card {
     order: 3;
+  }
+
+  .highlights-card {
+    order: 4;
   }
 }
 
@@ -3362,6 +3601,7 @@ h1 {
   .search-box,
   .search-actions,
   .search-action,
+  .save-city-action,
   .location-action {
     width: 100%;
   }
@@ -3448,6 +3688,15 @@ h1 {
     grid-template-columns: 1fr;
   }
 
+  .saved-city-item {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .saved-city-remove {
+    min-height: 44px;
+  }
+
   .forecast-row {
     grid-template-columns: 50px minmax(90px, 1fr) 1fr 34px 34px;
     gap: 8px;
@@ -3471,6 +3720,7 @@ h1 {
   .chart-point,
   .hour-card,
   .forecast-row,
+  .saved-city-item,
   .detail-card,
   .detail-meter span,
   .weather-glyph,

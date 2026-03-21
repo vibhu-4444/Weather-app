@@ -30,6 +30,7 @@
           </label>
           <div class="search-actions">
             <button class="search-action" id="search-action" type="submit">Search</button>
+            <button class="save-city-action" id="save-city-action" type="button" disabled>Add city</button>
             <button class="location-action" id="location-action" type="button">Use my location</button>
           </div>
         </form>
@@ -113,6 +114,19 @@
         </header>
 
         <div class="forecast-list" id="forecast-list"></div>
+      </article>
+
+      <article class="surface saved-cities-card" aria-label="Saved city weather list">
+        <header class="card-head">
+          <div>
+            <p class="section-label">Cities</p>
+            <h2>Saved weather</h2>
+          </div>
+          <span class="caption" id="saved-cities-count">0 saved</span>
+        </header>
+
+        <p class="saved-cities-copy" id="saved-cities-copy">Search for a city, then use Add city to pin it here.</p>
+        <div class="saved-cities-list" id="saved-cities-list" aria-live="polite"></div>
       </article>
 
       <article class="surface highlights-card" aria-label="Detailed weather information">
