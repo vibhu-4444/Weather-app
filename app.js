@@ -47,29 +47,39 @@ const AIR_CURRENT_FIELDS = [
 
 const METRIC_CONFIG = {
   temperature: {
+    key: "temperature",
     title: "Temperature trend",
     line: "#4285f4",
     fill: "rgba(66, 133, 244, 0.16)",
+    soft: "rgba(66, 133, 244, 0.14)",
+    glow: "rgba(66, 133, 244, 0.26)",
     value: (entry) => entry.temperature,
     label: (value) => `${Math.round(value)}°`
   },
   precipitation: {
+    key: "precipitation",
     title: "Precipitation chance",
     line: "#24a56a",
     fill: "rgba(36, 165, 106, 0.16)",
+    soft: "rgba(36, 165, 106, 0.14)",
+    glow: "rgba(36, 165, 106, 0.24)",
     value: (entry) => entry.precipitation,
     label: (value) => `${Math.round(value)}%`
   },
   wind: {
+    key: "wind",
     title: "Wind speed",
     line: "#f59e0b",
     fill: "rgba(245, 158, 11, 0.16)",
+    soft: "rgba(245, 158, 11, 0.14)",
+    glow: "rgba(245, 158, 11, 0.24)",
     value: (entry) => entry.wind,
     label: (value) => `${Math.round(value)} km/h`
   }
 };
 
 const HAS_GEOLOCATION = "geolocation" in navigator;
+const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const refs = {
   locationName: document.querySelector("#location-name"),
@@ -88,7 +98,10 @@ const refs = {
   statusMessage: document.querySelector("#status-message"),
   trendTitle: document.querySelector("#trend-title"),
   chartShell: document.querySelector("#chart-shell"),
+  hourlySlider: document.querySelector("#hourly-slider"),
   hourlyStrip: document.querySelector("#hourly-strip"),
+  hourlyPrev: document.querySelector("#hourly-prev"),
+  hourlyNext: document.querySelector("#hourly-next"),
   forecastList: document.querySelector("#forecast-list"),
   detailsGrid: document.querySelector("#details-grid"),
   searchForm: document.querySelector("#search-form"),
@@ -100,6 +113,7 @@ const refs = {
 
 const state = {
   metric: "temperature",
+  activeHourIndex: 0,
   requestId: 0,
   location: null,
   forecast: null,
@@ -135,6 +149,32 @@ refs.locationAction.addEventListener("click", async () => {
   await loadWeatherByCoordinates();
 });
 
+refs.hourlyStrip.addEventListener("click", (event) => {
+  const card = event.target.closest(".hour-card");
+  if (!card) {
+    return;
+  }
+
+  const nextIndex = Number(card.dataset.hourIndex);
+  if (Number.isNaN(nextIndex) || nextIndex === state.activeHourIndex) {
+    return;
+  }
+
+  state.activeHourIndex = nextIndex;
+  renderTrendSection();
+});
+
+refs.hourlyPrev.addEventListener("click", () => {
+  scrollHourlyStrip(-1);
+});
+
+refs.hourlyNext.addEventListener("click", () => {
+  scrollHourlyStrip(1);
+});
+
+refs.hourlyStrip.addEventListener("scroll", syncHourlySliderState, { passive: true });
+window.addEventListener("resize", syncHourlySliderState);
+
 if (!HAS_GEOLOCATION) {
   refs.locationAction.disabled = true;
   refs.locationAction.textContent = "Location unavailable";
@@ -142,6 +182,10 @@ if (!HAS_GEOLOCATION) {
 }
 
 renderLoadingState();
+requestAnimationFrame(() => {
+  document.body.classList.add("app-ready");
+  syncHourlySliderState();
+});
 loadWeather(DEFAULT_QUERY);
 
 async function loadWeather(query) {
@@ -313,6 +357,7 @@ function renderApp() {
   renderTrendSection();
   renderForecastSection();
   renderDetailsSection();
+  requestAnimationFrame(syncHourlySliderState);
 }
 
 function renderHero() {
@@ -339,10 +384,15 @@ function renderHero() {
   refs.heroVisual.innerHTML = buildHeroVisual(weather);
 
   refs.statRow.innerHTML = [
-    `Precipitation: ${Math.round(daily.precipitation_probability_max?.[0] ?? 0)}%`,
-    `Humidity: ${Math.round(current.relative_humidity_2m)}%`,
-    `Wind: ${Math.round(current.wind_speed_10m)} km/h`
-  ].map((item) => `<span class="stat-pill">${escapeHtml(item)}</span>`).join("");
+    { label: "Precipitation", value: `${Math.round(daily.precipitation_probability_max?.[0] ?? 0)}%` },
+    { label: "Humidity", value: `${Math.round(current.relative_humidity_2m)}%` },
+    { label: "Wind", value: `${Math.round(current.wind_speed_10m)} km/h` }
+  ].map((item) => `
+    <span class="stat-pill">
+      <span class="stat-pill-label">${escapeHtml(item.label)}</span>
+      <strong class="stat-pill-value">${escapeHtml(item.value)}</strong>
+    </span>
+  `).join("");
 
   refs.feelsLikeValue.textContent = `${Math.round(current.apparent_temperature)}°`;
   refs.feelsLikeCopy.textContent = `Actual ${Math.round(current.temperature_2m)}° with dew point near ${Math.round(current.dew_point_2m)}°.`;
@@ -363,19 +413,30 @@ function renderTrendSection() {
 
   const config = METRIC_CONFIG[state.metric];
   const entries = buildHourlyEntries();
+  state.activeHourIndex = clamp(state.activeHourIndex, 0, entries.length - 1);
 
   refs.trendTitle.textContent = config.title;
-  refs.chartShell.innerHTML = buildTrendChart(entries, config);
+  refs.chartShell.style.setProperty("--metric-line", config.line);
+  refs.chartShell.style.setProperty("--metric-soft", config.soft);
+  refs.chartShell.style.setProperty("--metric-glow", config.glow);
+  refs.chartShell.innerHTML = buildTrendChart(entries, config, state.activeHourIndex);
   refs.hourlyStrip.innerHTML = entries.map((entry, index) => {
     const weather = getWeatherMeta(entry.weatherCode, entry.isDay);
+    const climate = getClimateTheme(weather);
     return `
-      <article class="hour-card ${index === 0 ? "active" : ""}">
+      <button class="hour-card ${index === state.activeHourIndex ? "active" : ""}" type="button" data-hour-index="${index}" style="--card-index: ${index}; --card-accent: ${climate.accent}; --card-tone: ${climate.soft}; --card-glow: ${climate.glow};">
         <p>${escapeHtml(entry.label)}</p>
         ${buildWeatherGlyph(weather, "hourly")}
         <strong>${escapeHtml(config.label(config.value(entry)))}</strong>
-      </article>
+        <span class="hour-card-note">${escapeHtml(weather.shortLabel)}</span>
+      </button>
     `;
   }).join("");
+
+  requestAnimationFrame(() => {
+    focusActiveHourCard();
+    syncHourlySliderState();
+  });
 }
 
 function renderForecastSection() {
@@ -399,7 +460,7 @@ function renderForecastSection() {
     const climate = getClimateTheme(weather);
 
     return `
-      <div class="forecast-row forecast-row-${escapeHtml(weather.icon)} forecast-row-motion-${escapeHtml(weather.motion)}" style="--forecast-accent: ${climate.accent}; --forecast-accent-soft: ${climate.soft}; --forecast-glow: ${climate.glow};">
+      <div class="forecast-row forecast-row-${escapeHtml(weather.icon)} forecast-row-motion-${escapeHtml(weather.motion)}" style="--forecast-accent: ${climate.accent}; --forecast-accent-soft: ${climate.soft}; --forecast-glow: ${climate.glow}; --card-index: ${index};">
         <span class="day">${escapeHtml(formatDayLabel(time, index))}</span>
         <div class="forecast-weather">
           ${buildWeatherGlyph(weather, "forecast")}
@@ -610,43 +671,57 @@ function renderDetailsSection() {
       title: "Wind",
       value: `${Math.round(current.wind_speed_10m)} km/h`,
       copy: `${degreesToCompass(current.wind_direction_10m)} breeze with peaks near ${Math.round(daily.wind_speed_10m_max?.[0] ?? current.wind_speed_10m)} km/h.`,
-      fill: clamp((current.wind_speed_10m / 40) * 100, 12, 100)
+      fill: clamp((current.wind_speed_10m / 40) * 100, 12, 100),
+      accent: "#4285f4",
+      soft: "rgba(66, 133, 244, 0.14)"
     },
     {
       title: "Humidity",
       value: `${Math.round(current.relative_humidity_2m)}%`,
       copy: `Moisture is sitting in a comfortable range for the next few hours.`,
-      fill: clamp(current.relative_humidity_2m, 8, 100)
+      fill: clamp(current.relative_humidity_2m, 8, 100),
+      accent: "#24a56a",
+      soft: "rgba(36, 165, 106, 0.14)"
     },
     {
       title: "UV index",
       value: `${formatNumber(daily.uv_index_max?.[0], 1)}`,
       copy: uvSummary(daily.uv_index_max?.[0]),
-      fill: clamp(((daily.uv_index_max?.[0] ?? 0) / 11) * 100, 8, 100)
+      fill: clamp(((daily.uv_index_max?.[0] ?? 0) / 11) * 100, 8, 100),
+      accent: "#f7c64f",
+      soft: "rgba(247, 198, 79, 0.18)"
     },
     {
       title: "Pressure",
       value: `${Math.round(current.pressure_msl)} hPa`,
       copy: `Pressure is staying fairly stable across the region.`,
-      fill: clamp(((current.pressure_msl - 980) / 60) * 100, 8, 100)
+      fill: clamp(((current.pressure_msl - 980) / 60) * 100, 8, 100),
+      accent: "#6f93bc",
+      soft: "rgba(111, 147, 188, 0.14)"
     },
     {
       title: "Visibility",
       value: `${visibilityKm.toFixed(1)} km`,
       copy: `${visibilityKm >= 8 ? "Good" : "Reduced"} visibility for outdoor plans right now.`,
-      fill: clamp((visibilityKm / 10) * 100, 8, 100)
+      fill: clamp((visibilityKm / 10) * 100, 8, 100),
+      accent: "#5fa8ff",
+      soft: "rgba(95, 168, 255, 0.14)"
     },
     {
       title: "Dew point",
       value: `${Math.round(current.dew_point_2m)}°`,
       copy: `This is the temperature where moisture would begin condensing.`,
-      fill: clamp(((current.dew_point_2m + 10) / 40) * 100, 8, 100)
+      fill: clamp(((current.dew_point_2m + 10) / 40) * 100, 8, 100),
+      accent: "#3db7c4",
+      soft: "rgba(61, 183, 196, 0.14)"
     },
     {
       title: "Sunrise & sunset",
       value: formatClock(daily.sunrise?.[0]),
       copy: `Sunset ${formatClock(daily.sunset?.[0])} • ${formatDaylight(daily.daylight_duration?.[0])}.`,
-      className: "sunrise-card"
+      className: "sunrise-card",
+      accent: "#f0b24b",
+      soft: "rgba(240, 178, 75, 0.16)"
     },
     {
       title: "Air quality",
@@ -654,17 +729,19 @@ function renderDetailsSection() {
       copy: currentAir.us_aqi != null
         ? `AQI ${Math.round(currentAir.us_aqi)} • Ozone ${formatNumber(currentAir.ozone, 1)} ug/m3.`
         : "Air-quality data is not available for this location.",
-      className: "air-card"
+      className: "air-card",
+      accent: "#24a56a",
+      soft: "rgba(36, 165, 106, 0.16)"
     }
   ];
 
-  refs.detailsGrid.innerHTML = details.map((detail) => {
+  refs.detailsGrid.innerHTML = details.map((detail, index) => {
     const meter = detail.fill != null
       ? `<div class="detail-meter"><span style="--fill: ${detail.fill.toFixed(1)}%;"></span></div>`
       : "";
 
     return `
-      <article class="detail-card ${detail.className || ""}">
+      <article class="detail-card ${detail.className || ""}" style="--detail-accent: ${detail.accent || "#4285f4"}; --detail-soft: ${detail.soft || "rgba(66, 133, 244, 0.12)"}; --card-index: ${index};">
         <p>${escapeHtml(detail.title)}</p>
         <h3>${escapeHtml(detail.value)}</h3>
         <span>${escapeHtml(detail.copy)}</span>
@@ -688,7 +765,7 @@ function buildHourlyEntries() {
     }
   ];
 
-  for (let offset = 0; offset < 7; offset += 1) {
+  for (let offset = 0; offset < 9; offset += 1) {
     const index = Math.min(firstHourlyIndex + offset, hourly.time.length - 1);
     entries.push({
       label: formatHourLabel(hourly.time[index]),
@@ -709,50 +786,102 @@ function findHourlyStartIndex(times, currentTime) {
   return index >= 0 ? index : 0;
 }
 
-function buildTrendChart(entries, config) {
-  const width = 760;
-  const height = 250;
+function buildTrendChart(entries, config, activeIndex = 0) {
+  const width = 780;
+  const height = 292;
   const left = 56;
-  const right = 704;
-  const top = 64;
-  const bottom = 176;
+  const right = 724;
+  const top = 48;
+  const bottom = 210;
   const values = entries.map((entry) => config.value(entry));
   const min = Math.min(...values);
   const max = Math.max(...values);
-  const range = max - min;
+  const rawRange = Math.max(max - min, 1);
+  const floor = config.key === "precipitation" ? 0 : min - Math.max(rawRange * 0.24, 1.4);
+  const ceiling = max + Math.max(rawRange * 0.3, 1.8);
+  const range = Math.max(ceiling - floor, 1);
   const step = entries.length > 1 ? (right - left) / (entries.length - 1) : 0;
 
   const points = values.map((value, index) => {
     const x = left + step * index;
-    const ratio = range === 0 ? 0.5 : (value - min) / range;
+    const ratio = range === 0 ? 0.5 : (value - floor) / range;
     const y = bottom - ratio * (bottom - top);
     return { x, y, value };
   });
 
+  const activePoint = points[activeIndex];
+  const peakIndex = values.indexOf(max);
+  const overview = buildTrendOverview(entries, config, values, activeIndex, peakIndex, min, max);
   const linePath = points.map((point, index) => `${index === 0 ? "M" : "L"}${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(" ");
-  const areaPath = `${linePath} L ${right} 208 L ${left} 208 Z`;
+  const areaPath = `${linePath} L ${right} 236 L ${left} 236 Z`;
+  const labelIndexes = new Set([0, activeIndex, peakIndex, values.length - 1]);
   const labels = points.map((point, index) => {
-    if (index !== 0 && index !== points.length - 1 && index % 2 !== 0) {
+    if (!labelIndexes.has(index)) {
       return "";
     }
 
-    return `<text x="${point.x.toFixed(1)}" y="${(point.y - 14).toFixed(1)}">${escapeHtml(config.label(point.value))}</text>`;
+    return `<text x="${point.x.toFixed(1)}" y="${(point.y - 18).toFixed(1)}" class="chart-point-label ${index === activeIndex ? "is-active" : ""}">${escapeHtml(config.label(point.value))}</text>`;
   }).join("");
+  const gridLines = Array.from({ length: 4 }, (_, index) => {
+    const ratio = index / 3;
+    const y = top + ((bottom - top) * ratio);
+    const tick = ceiling - ((ceiling - floor) * ratio);
+    return `
+      <g class="chart-grid-row">
+        <path d="M${left} ${y.toFixed(1)}H${right}" class="grid-line"></path>
+        <text x="${(right + 18).toFixed(1)}" y="${(y + 5).toFixed(1)}" class="chart-scale-label">${escapeHtml(formatMetricTick(config, tick))}</text>
+      </g>
+    `;
+  }).join("");
+  const axisLabels = points.map((point, index) => {
+    if (index !== activeIndex && index !== 0 && index !== points.length - 1 && index % 2 !== 0) {
+      return "";
+    }
 
-  const circles = points.map((point) => `
-    <circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="6"></circle>
+    return `<text x="${point.x.toFixed(1)}" y="258" class="chart-axis-label ${index === activeIndex ? "is-active" : ""}">${escapeHtml(entries[index].label)}</text>`;
+  }).join("");
+  const pointMarkup = points.map((point, index) => `
+    <g class="chart-point ${index === activeIndex ? "is-active" : ""}" style="--point-delay: ${index * 0.08}s;">
+      <circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="${index === activeIndex ? "18" : "13"}" class="chart-point-halo"></circle>
+      <circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="${index === activeIndex ? "8" : "6"}" class="chart-point-ring"></circle>
+      <circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="${index === activeIndex ? "4.5" : "3.5"}" class="chart-point-core"></circle>
+    </g>
   `).join("");
 
   return `
-    <svg viewBox="0 0 ${width} ${height}" class="trend-chart" aria-hidden="true">
-      <path d="M56 180H704" class="grid-line"></path>
-      <path d="M56 122H704" class="grid-line"></path>
-      <path d="M56 64H704" class="grid-line"></path>
-      <path d="${areaPath}" fill="${config.fill}"></path>
-      <path d="${linePath}" fill="none" stroke="${config.line}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path>
-      <g class="chart-points" fill="#ffffff" stroke="${config.line}" stroke-width="4">${circles}</g>
-      <g class="chart-values">${labels}</g>
-    </svg>
+    <div class="chart-overview">
+      ${overview}
+    </div>
+    <div class="chart-visual">
+      <svg viewBox="0 0 ${width} ${height}" class="trend-chart" aria-hidden="true">
+        <defs>
+          <linearGradient id="trend-area-${config.key}" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="${config.line}" stop-opacity="0.34"></stop>
+            <stop offset="100%" stop-color="${config.line}" stop-opacity="0.02"></stop>
+          </linearGradient>
+          <linearGradient id="trend-line-${config.key}" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="${config.line}" stop-opacity="0.62"></stop>
+            <stop offset="100%" stop-color="${config.line}" stop-opacity="1"></stop>
+          </linearGradient>
+          <filter id="trend-glow-${config.key}" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="7" result="blur"></feGaussianBlur>
+            <feMerge>
+              <feMergeNode in="blur"></feMergeNode>
+              <feMergeNode in="SourceGraphic"></feMergeNode>
+            </feMerge>
+          </filter>
+        </defs>
+        <rect x="22" y="16" width="716" height="236" rx="28" class="chart-stage-surface"></rect>
+        <rect x="${(activePoint.x - 24).toFixed(1)}" y="22" width="48" height="218" rx="24" class="chart-focus-beam"></rect>
+        ${gridLines}
+        <path d="${areaPath}" class="trend-area" fill="url(#trend-area-${config.key})"></path>
+        <path d="${linePath}" class="trend-glow" stroke="url(#trend-line-${config.key})" filter="url(#trend-glow-${config.key})"></path>
+        <path d="${linePath}" class="trend-line" stroke="url(#trend-line-${config.key})"></path>
+        <g class="chart-points">${pointMarkup}</g>
+        <g class="chart-values">${labels}</g>
+        <g class="chart-axis">${axisLabels}</g>
+      </svg>
+    </div>
   `;
 }
 
@@ -933,9 +1062,10 @@ function getAirQualityMeta(aqi) {
 
 function renderLoadingState() {
   refs.chartShell.innerHTML = '<p class="placeholder">Loading chart...</p>';
-  refs.hourlyStrip.innerHTML = '<article class="hour-card active"><p>Loading</p><strong>--</strong></article>';
+  refs.hourlyStrip.innerHTML = '<button class="hour-card active" type="button" disabled><p>Loading</p><strong>--</strong><span class="hour-card-note">Forecast</span></button>';
   refs.forecastList.innerHTML = '<div class="forecast-row placeholder-row">Loading 10-day forecast...</div>';
   refs.detailsGrid.innerHTML = '<article class="detail-card"><p>Loading</p><h3>--</h3><span>Waiting for live weather details.</span></article>';
+  syncHourlySliderState();
 }
 
 function updateMetricButtons() {
@@ -1123,6 +1253,118 @@ function formatNumber(value, digits = 0) {
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
+}
+
+function buildTrendOverview(entries, config, values, activeIndex, peakIndex, min, max) {
+  const activeEntry = entries[activeIndex];
+  const activeWeather = getWeatherMeta(activeEntry.weatherCode, activeEntry.isDay);
+  const average = values.reduce((sum, value) => sum + value, 0) / values.length;
+
+  return [
+    {
+      label: "Focus",
+      value: config.label(values[activeIndex]),
+      copy: `${activeEntry.label} • ${activeWeather.shortLabel}`
+    },
+    {
+      label: "Peak",
+      value: config.label(max),
+      copy: `Highest around ${entries[peakIndex].label}`
+    },
+    {
+      label: "Window",
+      value: config.label(average),
+      copy: `${describeMetricTrend(config, values)} • ${config.label(min)} to ${config.label(max)}`
+    }
+  ].map((item, index) => `
+    <article class="chart-stat ${index === 0 ? "chart-stat-primary" : ""}" style="--card-index: ${index};">
+      <span>${escapeHtml(item.label)}</span>
+      <strong>${escapeHtml(item.value)}</strong>
+      <small>${escapeHtml(item.copy)}</small>
+    </article>
+  `).join("");
+}
+
+function describeMetricTrend(config, values) {
+  const delta = values[values.length - 1] - values[0];
+
+  if (config.key === "temperature") {
+    if (delta > 1.5) {
+      return "Warming through the next hours";
+    }
+
+    if (delta < -1.5) {
+      return "Cooling later in the window";
+    }
+
+    return "Temperature holds fairly steady";
+  }
+
+  if (config.key === "precipitation") {
+    if (delta > 15) {
+      return "Rain odds are building up";
+    }
+
+    if (delta < -15) {
+      return "Rain odds are easing off";
+    }
+
+    return "Rain chance stays fairly even";
+  }
+
+  if (delta > 5) {
+    return "Wind picks up later on";
+  }
+
+  if (delta < -5) {
+    return "Wind softens through the window";
+  }
+
+  return "Wind remains fairly balanced";
+}
+
+function formatMetricTick(config, value) {
+  if (config.key === "wind") {
+    return `${Math.round(value)}`;
+  }
+
+  return config.label(value);
+}
+
+function focusActiveHourCard() {
+  const activeCard = refs.hourlyStrip.querySelector(`.hour-card[data-hour-index="${state.activeHourIndex}"]`);
+  if (!activeCard) {
+    return;
+  }
+
+  activeCard.scrollIntoView({
+    block: "nearest",
+    inline: state.activeHourIndex === 0 ? "nearest" : "center",
+    behavior: REDUCED_MOTION ? "auto" : "smooth"
+  });
+}
+
+function scrollHourlyStrip(direction) {
+  const sampleCard = refs.hourlyStrip.querySelector(".hour-card");
+  const sampleWidth = sampleCard ? sampleCard.getBoundingClientRect().width + 16 : refs.hourlyStrip.clientWidth * 0.86;
+
+  refs.hourlyStrip.scrollBy({
+    left: direction * sampleWidth * 2,
+    behavior: REDUCED_MOTION ? "auto" : "smooth"
+  });
+}
+
+function syncHourlySliderState() {
+  const maxScroll = Math.max(refs.hourlyStrip.scrollWidth - refs.hourlyStrip.clientWidth, 0);
+  const hasOverflow = maxScroll > 8;
+  const scrollLeft = refs.hourlyStrip.scrollLeft;
+
+  refs.hourlySlider.classList.toggle("is-scrollable", hasOverflow);
+  refs.hourlySlider.classList.toggle("can-scroll-left", hasOverflow && scrollLeft > 8);
+  refs.hourlySlider.classList.toggle("can-scroll-right", hasOverflow && scrollLeft < maxScroll - 8);
+
+  refs.hourlyPrev.disabled = !hasOverflow || scrollLeft <= 8;
+  refs.hourlyNext.disabled = !hasOverflow || scrollLeft >= maxScroll - 8;
 }
 
 function escapeHtml(value) {

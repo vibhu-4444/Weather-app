@@ -92,7 +92,15 @@
         </header>
 
         <div class="chart-shell" id="chart-shell" aria-live="polite"></div>
-        <div class="hourly-strip" id="hourly-strip"></div>
+        <div class="hourly-slider" id="hourly-slider">
+          <button class="slider-control slider-control-prev" id="hourly-prev" type="button" aria-label="Show earlier forecast hours">
+            <span aria-hidden="true">&#8249;</span>
+          </button>
+          <div class="hourly-strip" id="hourly-strip"></div>
+          <button class="slider-control slider-control-next" id="hourly-next" type="button" aria-label="Show later forecast hours">
+            <span aria-hidden="true">&#8250;</span>
+          </button>
+        </div>
       </article>
 
       <article class="surface forecast-card" aria-label="Ten day forecast">
