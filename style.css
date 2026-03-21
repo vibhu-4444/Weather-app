@@ -374,6 +374,28 @@ h1 {
   margin-top: 24px;
 }
 
+.hero-hourly-panel {
+  margin-top: 24px;
+  padding: 20px;
+  border-radius: 28px;
+  border: 1px solid rgba(137, 180, 219, 0.28);
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.92), transparent 34%),
+    linear-gradient(180deg, rgba(248, 252, 255, 0.98), rgba(236, 245, 255, 0.94));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 16px 30px rgba(87, 121, 158, 0.08);
+}
+
+.hero-hourly-head {
+  align-items: flex-end;
+}
+
+.hero-hourly-head .caption {
+  max-width: 24ch;
+  text-align: right;
+}
+
 .hero-summary {
   justify-content: space-between;
   gap: 20px;
@@ -470,8 +492,9 @@ h1 {
 
 .hero-visual-moon {
   background:
-    radial-gradient(circle at 26% 18%, rgba(194, 209, 240, 0.3), transparent 24%),
-    linear-gradient(180deg, rgba(213, 225, 242, 0.97), rgba(176, 191, 215, 0.94));
+    radial-gradient(circle at 26% 18%, rgba(255, 222, 129, 0.34), transparent 24%),
+    radial-gradient(circle at 76% 22%, rgba(255, 255, 255, 0.34), transparent 18%),
+    linear-gradient(180deg, rgba(220, 230, 247, 0.97), rgba(183, 197, 220, 0.94));
 }
 
 .hero-scene {
@@ -961,22 +984,23 @@ h1 {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: linear-gradient(180deg, #dbe8ff, #b7c9ee);
+  background: radial-gradient(circle at 30% 30%, #fff6bf, #ffd45e 58%, #f0b84b 100%);
+  -webkit-mask-image: radial-gradient(circle at 71% 34%, transparent 0 35%, #000 36%);
+  mask-image: radial-gradient(circle at 71% 34%, transparent 0 35%, #000 36%);
+  box-shadow:
+    0 0 22px rgba(255, 212, 94, 0.5),
+    0 0 42px rgba(255, 223, 136, 0.28);
   animation: heroMoonFloat 4.6s ease-in-out infinite;
 }
 
 .hero-moon-core::after {
-  content: "";
-  position: absolute;
-  inset: 3px 3px 3px 22px;
-  border-radius: 50%;
-  background: #eef5ff;
+  content: none;
 }
 
 .hero-star {
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+  background: rgba(255, 251, 235, 0.98);
+  box-shadow: 0 0 12px rgba(255, 244, 197, 0.82);
 }
 
 .star-one {
@@ -993,6 +1017,44 @@ h1 {
   width: 5px;
   height: 5px;
   animation: heroStarPulse 3.2s ease-in-out infinite 0.7s;
+}
+
+.hero-visual-moon .hero-orbit {
+  border-color: rgba(255, 230, 155, 0.58);
+  box-shadow: 0 0 16px rgba(255, 223, 132, 0.16);
+  opacity: 0.9;
+}
+
+.hero-visual-moon .orbit-one {
+  inset: 12px 30px 20px;
+  animation-duration: 12s;
+}
+
+.hero-visual-moon .orbit-two {
+  inset: 28px 52px 34px;
+  border-color: rgba(255, 246, 214, 0.5);
+  animation-duration: 8s;
+}
+
+.hero-visual-moon .hero-particle,
+.hero-visual-moon .hero-star {
+  background: rgba(255, 249, 223, 0.98);
+  box-shadow: 0 0 16px rgba(255, 236, 170, 0.88);
+}
+
+.hero-visual-moon .particle-one {
+  top: 26px;
+  left: 44px;
+}
+
+.hero-visual-moon .particle-two {
+  top: 42px;
+  right: 52px;
+}
+
+.hero-visual-moon .particle-three {
+  bottom: 46px;
+  left: 84px;
 }
 
 .hero-reading {
@@ -1156,9 +1218,18 @@ h1 {
 
 .content-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.85fr);
-  gap: 22px;
+  grid-template-columns: minmax(0, 1.52fr) minmax(300px, 0.88fr);
+  gap: 20px;
   align-items: start;
+}
+
+.side-stack {
+  grid-column: 2 / 3;
+  grid-row: 1 / span 2;
+  display: grid;
+  gap: 20px;
+  align-self: start;
+  min-width: 0;
 }
 
 .surface {
@@ -1171,27 +1242,35 @@ h1 {
 .chart-card,
 .highlights-card {
   grid-column: 1 / 2;
+  min-width: 0;
+}
+
+.chart-card {
+  grid-row: 1;
+}
+
+.highlights-card {
+  grid-row: 2;
 }
 
 .saved-cities-card {
-  grid-column: 2 / 3;
   display: flex;
   flex-direction: column;
   gap: 16px;
   align-self: start;
+  min-width: 0;
   background:
     radial-gradient(circle at top left, rgba(255, 255, 255, 0.82), transparent 34%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(238, 246, 255, 0.94));
 }
 
 .forecast-card {
-  grid-column: 2 / 3;
-  grid-row: 1 / span 2;
   display: flex;
   flex-direction: column;
   align-self: start;
   position: relative;
   overflow: hidden;
+  min-width: 0;
   background:
     radial-gradient(circle at top left, rgba(255, 255, 255, 0.82), transparent 34%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(241, 248, 255, 0.94));
@@ -1939,16 +2018,16 @@ h1 {
 .weather-glyph .wx-cloud-back,
 .weather-glyph .wx-cloud-front,
 .weather-glyph .wx-cloud-base {
-  fill: #eef6ff;
+  fill: #ffffff;
   animation: glyphCloudFloat 4.4s ease-in-out infinite;
 }
 
 .weather-glyph .wx-cloud-back {
-  opacity: 0.82;
+  opacity: 0.92;
 }
 
 .weather-glyph .wx-cloud-front {
-  filter: drop-shadow(0 3px 6px rgba(125, 163, 197, 0.18));
+  filter: drop-shadow(0 3px 8px rgba(146, 177, 206, 0.22));
 }
 
 .weather-glyph .wx-cloud-base {
@@ -2066,13 +2145,14 @@ h1 {
 }
 
 .weather-glyph .wx-moon-core {
-  fill: #dbe8ff;
-  filter: drop-shadow(0 0 7px rgba(200, 217, 255, 0.26));
+  fill: #ffd55f;
+  filter: drop-shadow(0 0 8px rgba(255, 212, 94, 0.6)) drop-shadow(0 0 14px rgba(255, 234, 166, 0.38));
   animation: glyphMoonDrift 4.2s ease-in-out infinite;
 }
 
 .weather-glyph .wx-star {
-  fill: rgba(255, 255, 255, 0.95);
+  fill: rgba(255, 250, 229, 0.98);
+  filter: drop-shadow(0 0 5px rgba(255, 238, 177, 0.72));
   animation: glyphStarBlink 2.8s ease-in-out infinite;
 }
 
@@ -2101,7 +2181,11 @@ h1 {
 .weather-glyph-hero .wx-cloud-back,
 .weather-glyph-hero .wx-cloud-front,
 .weather-glyph-hero .wx-cloud-base {
-  filter: drop-shadow(0 8px 14px rgba(102, 137, 174, 0.18));
+  filter: drop-shadow(0 8px 14px rgba(102, 137, 174, 0.14));
+}
+
+.weather-glyph-hero .wx-moon-core {
+  filter: drop-shadow(0 0 16px rgba(255, 214, 110, 0.72)) drop-shadow(0 0 28px rgba(255, 240, 186, 0.42));
 }
 
 .weather-glyph-hero .wx-drop {
@@ -2268,17 +2352,16 @@ h1 {
 
 .mini-dot.moon,
 .forecast-dot.moon {
-  background: linear-gradient(180deg, #dbe8ff, #b7c9ee);
+  background: linear-gradient(180deg, #ffe28a, #f5bf43);
+  -webkit-mask-image: radial-gradient(circle at 70% 36%, transparent 0 31%, #000 32%);
+  mask-image: radial-gradient(circle at 70% 36%, transparent 0 31%, #000 32%);
   animation: miniMoonHover 4.2s ease-in-out infinite;
+  box-shadow: 0 0 10px rgba(255, 212, 94, 0.28);
 }
 
 .mini-dot.moon::after,
 .forecast-dot.moon::after {
-  content: "";
-  position: absolute;
-  inset: 4px 3px 4px 8px;
-  border-radius: 50%;
-  background: #f4f8ff;
+  content: none;
 }
 
 .caption {
@@ -2287,14 +2370,38 @@ h1 {
 }
 
 .forecast-list {
+  --forecast-row-height: 78px;
   display: grid;
   gap: 12px;
   margin-top: 20px;
   position: relative;
+  max-height: calc((var(--forecast-row-height) * 5) + (12px * 4));
+  overflow-y: auto;
+  padding-right: 10px;
+  scroll-snap-type: y proximity;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(66, 133, 244, 0.38) rgba(223, 236, 250, 0.82);
+}
+
+.forecast-list::-webkit-scrollbar {
+  width: 10px;
+}
+
+.forecast-list::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(223, 236, 250, 0.82), rgba(241, 247, 255, 0.92));
+}
+
+.forecast-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  border: 2px solid rgba(241, 247, 255, 0.92);
+  background: linear-gradient(180deg, rgba(66, 133, 244, 0.5), rgba(123, 173, 243, 0.68));
 }
 
 .forecast-row {
   --card-lift: 0px;
+  min-height: var(--forecast-row-height);
   position: relative;
   gap: 12px;
   margin: 0 4px;
@@ -2312,6 +2419,7 @@ h1 {
   user-select: none;
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
+  scroll-snap-align: start;
 }
 
 .forecast-row > * {
@@ -2596,15 +2704,14 @@ h1 {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: linear-gradient(180deg, #dbe8ff, #b7c9ee);
+  background: linear-gradient(180deg, #ffe28a, #f5bf43);
+  -webkit-mask-image: radial-gradient(circle at 70% 36%, transparent 0 31%, #000 32%);
+  mask-image: radial-gradient(circle at 70% 36%, transparent 0 31%, #000 32%);
+  box-shadow: 0 0 10px rgba(255, 212, 94, 0.24);
 }
 
 .forecast-moon-core::after {
-  content: "";
-  position: absolute;
-  inset: 1px 1px 1px 6px;
-  border-radius: 50%;
-  background: #eef5ff;
+  content: none;
 }
 
 .forecast-anim-sunny .forecast-sun-core {
@@ -3531,27 +3638,24 @@ h1 {
 
 @media (max-width: 1120px) {
   .content-grid {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: stretch;
   }
 
   .chart-card,
-  .forecast-card,
-  .saved-cities-card,
+  .highlights-card,
+  .side-stack {
+    width: 100%;
+  }
+
   .highlights-card {
-    grid-column: auto;
-    grid-row: auto;
-  }
-
-  .forecast-card {
-    order: 2;
-  }
-
-  .saved-cities-card {
     order: 3;
   }
 
-  .highlights-card {
-    order: 4;
+  .side-stack {
+    order: 2;
   }
 }
 

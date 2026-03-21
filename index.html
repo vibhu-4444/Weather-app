@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WeatherX</title>
+  <title>Weather X</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
@@ -76,13 +76,33 @@
           </article>
         </div>
       </div>
+
+      <section class="hero-hourly-panel" aria-label="Upcoming time details">
+        <header class="card-head hero-hourly-head">
+          <div>
+            <p class="section-label">Time details</p>
+            <h2>Next hours</h2>
+          </div>
+          <span class="caption">Tap a card to focus the trend below</span>
+        </header>
+
+        <div class="hourly-slider" id="hourly-slider">
+          <button class="slider-control slider-control-prev" id="hourly-prev" type="button" aria-label="Show earlier forecast hours">
+            <span aria-hidden="true">&#8249;</span>
+          </button>
+          <div class="hourly-strip" id="hourly-strip"></div>
+          <button class="slider-control slider-control-next" id="hourly-next" type="button" aria-label="Show later forecast hours">
+            <span aria-hidden="true">&#8250;</span>
+          </button>
+        </div>
+      </section>
     </section>
 
     <section class="content-grid">
-      <article class="surface chart-card" aria-label="Hourly weather forecast">
+      <article class="surface chart-card" aria-label="Weather trend chart">
         <header class="card-head">
           <div>
-            <p class="section-label">Today's forecast</p>
+            <p class="section-label">Forecast trend</p>
             <h2 id="trend-title">Temperature trend</h2>
           </div>
           <div class="mode-tabs" aria-label="Weather metrics">
@@ -93,40 +113,6 @@
         </header>
 
         <div class="chart-shell" id="chart-shell" aria-live="polite"></div>
-        <div class="hourly-slider" id="hourly-slider">
-          <button class="slider-control slider-control-prev" id="hourly-prev" type="button" aria-label="Show earlier forecast hours">
-            <span aria-hidden="true">&#8249;</span>
-          </button>
-          <div class="hourly-strip" id="hourly-strip"></div>
-          <button class="slider-control slider-control-next" id="hourly-next" type="button" aria-label="Show later forecast hours">
-            <span aria-hidden="true">&#8250;</span>
-          </button>
-        </div>
-      </article>
-
-      <article class="surface forecast-card" aria-label="Ten day forecast">
-        <header class="card-head">
-          <div>
-            <p class="section-label">Forecast</p>
-            <h2>10-day outlook</h2>
-          </div>
-          <span class="caption">High / low</span>
-        </header>
-
-        <div class="forecast-list" id="forecast-list"></div>
-      </article>
-
-      <article class="surface saved-cities-card" aria-label="Saved city weather list">
-        <header class="card-head">
-          <div>
-            <p class="section-label">Cities</p>
-            <h2>Saved weather</h2>
-          </div>
-          <span class="caption" id="saved-cities-count">0 saved</span>
-        </header>
-
-        <p class="saved-cities-copy" id="saved-cities-copy">Search for a city, then use Add city to pin it here.</p>
-        <div class="saved-cities-list" id="saved-cities-list" aria-live="polite"></div>
       </article>
 
       <article class="surface highlights-card" aria-label="Detailed weather information">
@@ -139,6 +125,33 @@
 
         <div class="details-grid" id="details-grid"></div>
       </article>
+
+      <div class="side-stack">
+        <article class="surface saved-cities-card" aria-label="Saved city weather list">
+          <header class="card-head">
+            <div>
+              <p class="section-label">Cities</p>
+              <h2>Saved weather</h2>
+            </div>
+            <span class="caption" id="saved-cities-count">0 saved</span>
+          </header>
+
+          <p class="saved-cities-copy" id="saved-cities-copy">Search for a city, then use Add city to pin it here.</p>
+          <div class="saved-cities-list" id="saved-cities-list" aria-live="polite"></div>
+        </article>
+
+        <article class="surface forecast-card" aria-label="Ten day forecast">
+          <header class="card-head">
+            <div>
+              <p class="section-label">Forecast</p>
+              <h2>10-day outlook</h2>
+            </div>
+            <span class="caption">High / low</span>
+          </header>
+
+          <div class="forecast-list" id="forecast-list"></div>
+        </article>
+      </div>
     </section>
   </main>
 

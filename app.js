@@ -375,8 +375,8 @@ async function fetchJson(url) {
   }
 
   const data = await response.json();
-  if (data.error) {
-    throw new Error(data.reason || "The weather service returned an error.");
+  if (data?.error) {
+    throw new Error(data.reason || data.message || "The weather service returned an error.");
   }
 
   return data;
@@ -478,13 +478,19 @@ function renderForecastSection() {
   }
 
   const daily = state.forecast.daily;
-  const highs = daily.temperature_2m_max.slice(0, 10);
-  const lows = daily.temperature_2m_min.slice(0, 10);
+  const visibleDays = Math.min(daily.time.length, 10);
+  if (!visibleDays) {
+    refs.forecastList.innerHTML = '<div class="forecast-row placeholder-row">Forecast data is unavailable right now.</div>';
+    return;
+  }
+
+  const highs = daily.temperature_2m_max.slice(0, visibleDays);
+  const lows = daily.temperature_2m_min.slice(0, visibleDays);
   const overallMin = Math.min(...lows);
   const overallMax = Math.max(...highs);
   const range = Math.max(overallMax - overallMin, 1);
 
-  refs.forecastList.innerHTML = daily.time.slice(0, 10).map((time, index) => {
+  refs.forecastList.innerHTML = daily.time.slice(0, visibleDays).map((time, index) => {
     const low = daily.temperature_2m_min[index];
     const high = daily.temperature_2m_max[index];
     const start = ((low - overallMin) / range) * 100;
@@ -606,7 +612,7 @@ function buildWeatherGlyphSvg(weatherOrIcon, variant = "forecast") {
     case "moon":
       return `
         <g class="wx-moon">
-          <path class="wx-moon-core" d="M29 9C24 9.7 20.3 14 20.3 19.2C20.3 24.8 24.8 29.3 30.4 29.3C33 29.3 35.3 28.4 37 27C35.5 31.3 31.4 34.4 26.6 34.4C20.5 34.4 15.5 29.5 15.5 23.3C15.5 17.1 20.5 12.1 26.6 12.1C27.5 12.1 28.3 12.2 29 12.4Z"></path>
+          <path class="wx-moon-core" d="M31 11C24.6 11 19.4 16.4 19.4 23C19.4 29.6 24.6 35 31 35C27 31.8 24.6 27.6 24.6 23C24.6 18.4 27 14.2 31 11Z"></path>
           <circle class="wx-star" cx="35" cy="13" r="1.8"></circle>
           <circle class="wx-star wx-star-small" cx="13.5" cy="18" r="1.3"></circle>
         </g>
@@ -786,17 +792,22 @@ function renderDetailsSection() {
 
 function buildHourlyEntries() {
   const { current, hourly } = state.forecast;
-  const firstHourlyIndex = findHourlyStartIndex(hourly.time, current.time);
+  const hasHourlyData = Array.isArray(hourly.time) && hourly.time.length > 0;
+  const firstHourlyIndex = hasHourlyData ? findHourlyStartIndex(hourly.time, current.time) : 0;
   const entries = [
     {
       label: "Now",
       temperature: current.temperature_2m,
-      precipitation: hourly.precipitation_probability[firstHourlyIndex] ?? 0,
+      precipitation: hasHourlyData ? (hourly.precipitation_probability[firstHourlyIndex] ?? 0) : 0,
       wind: current.wind_speed_10m,
       weatherCode: current.weather_code,
       isDay: Boolean(current.is_day)
     }
   ];
+
+  if (!hasHourlyData) {
+    return entries;
+  }
 
   for (let offset = 0; offset < 9; offset += 1) {
     const index = Math.min(firstHourlyIndex + offset, hourly.time.length - 1);
@@ -1012,6 +1023,46 @@ function getClimateTheme(weatherOrIcon) {
 }
 
 function getWeatherMeta(code, isDay) {
+  if (code >= 200 && code < 300) {
+    return { label: "Thunderstorm", shortLabel: "Storm", icon: "storm", motion: "storm", summary: "Storm activity is building nearby" };
+  }
+
+  if (code >= 300 && code < 400) {
+    return { label: "Drizzle", shortLabel: "Drizzle", icon: "rain", motion: "drizzle", summary: "A light drizzle is passing through" };
+  }
+
+  if (code >= 500 && code < 505) {
+    return { label: "Rain", shortLabel: "Rain", icon: "rain", motion: "rain", summary: "Steady rain is moving through" };
+  }
+
+  if (code >= 505 && code < 600) {
+    return { label: "Heavy rain", shortLabel: "Heavy rain", icon: "rain", motion: "downpour", summary: "Heavier rain is pushing into the area" };
+  }
+
+  if (code >= 600 && code < 700) {
+    return { label: "Snow", shortLabel: "Snow", icon: "snow", motion: "snow", summary: "Cold wintry weather is in place" };
+  }
+
+  if (code >= 700 && code < 800) {
+    return { label: "Fog", shortLabel: "Fog", icon: "fog", motion: "fog", summary: "Visibility is reduced by haze or fog" };
+  }
+
+  if (code === 800) {
+    return isDay
+      ? { label: "Clear sky", shortLabel: "Clear", icon: "sunny", motion: "sunny", summary: "Bright and clear" }
+      : { label: "Clear night", shortLabel: "Clear", icon: "moon", motion: "night", summary: "Calm and clear" };
+  }
+
+  if ([801, 802].includes(code)) {
+    return isDay
+      ? { label: "Partly cloudy", shortLabel: "Partly cloudy", icon: "partly", motion: "partly", summary: "A mix of sun and clouds" }
+      : { label: "Mostly clear", shortLabel: "Mostly clear", icon: "moon", motion: "night", summary: "Some clouds with a calm night sky" };
+  }
+
+  if ([803, 804].includes(code)) {
+    return { label: "Overcast", shortLabel: "Cloudy", icon: "cloudy", motion: "cloudy", summary: "Cloud cover is dominating" };
+  }
+
   if (code === 0) {
     return isDay
       ? { label: "Clear sky", shortLabel: "Clear", icon: "sunny", motion: "sunny", summary: "Bright and clear" }
